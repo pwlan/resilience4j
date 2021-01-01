@@ -1,0 +1,290 @@
+/*
+ *
+ * Copyright 2020
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ *
+ *
+ */
+package io.github.resilience4j.feign.v2;
+
+import io.github.resilience4j.bulkhead.Bulkhead;
+import io.github.resilience4j.circuitbreaker.CircuitBreaker;
+import io.github.resilience4j.feign.Resilience4jFeign;
+import io.github.resilience4j.feign.v2.FallbackDecorator;
+import io.github.resilience4j.feign.v2.FallbackFactory;
+import io.github.resilience4j.ratelimiter.RateLimiter;
+import io.github.resilience4j.retry.Retry;
+import io.vavr.CheckedFunction1;
+
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
+
+import static feign.Util.checkNotNull;
+import static java.util.concurrent.Executors.newScheduledThreadPool;
+
+/**
+ * Builder to help build stacked decorators. <br>
+ *
+ * <pre>
+ * {
+ *     &#64;code
+ *     CircuitBreaker circuitBreaker = CircuitBreaker.ofDefaults("backendName");
+ *     RateLimiter rateLimiter = RateLimiter.ofDefaults("backendName");
+ *     FeignDecorators decorators = FeignDecorators.builder()
+ *             .withCircuitBreaker(circuitBreaker)
+ *             .withRateLimiter(rateLimiter)
+ *             .build();
+ *     MyService myService = Resilience4jFeign.builder(decorators).target(MyService.class, "http://localhost:8080/");
+ * }
+ * </pre>
+ * <p>
+ * The order in which decorators are applied correspond to the order in which they are declared. For
+ * example, calling before {@link
+ * Builder#withCircuitBreaker(CircuitBreaker)} would mean that the fallback is
+ * called when the HTTP request fails, but would no longer be reachable if the CircuitBreaker were
+ * open. However, reversing the order would mean that the fallback is called both when the HTTP
+ * request fails and when the CircuitBreaker is open. <br> So be wary of this when designing your
+ * "resilience" strategy.
+ */
+public class FeignDecorators implements FeignDecorator {
+
+    private final List<FeignDecorator> decorators;
+
+    private FeignDecorators(List<FeignDecorator> decorators) {
+        this.decorators = decorators;
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    @Override
+    public CheckedFunction1<Object[], ?> decorate(CheckedFunction1<Object[], ?> fn, Method method) {
+        CheckedFunction1<Object[], ?> decoratedFn = fn;
+        for (final FeignDecorator decorator : decorators) {
+            decoratedFn = decorator.decorate(decoratedFn, method);
+        }
+        return decoratedFn;
+    }
+
+    public static final class Builder {
+
+        private final List<FeignDecorator> decorators = new ArrayList<>();
+        private ScheduledExecutorService scheduledExecutor;
+
+        /**
+         * TODO
+         */
+        public Builder withDefaultScheduledExecutor() {
+            scheduledExecutor = newScheduledThreadPool(10, r -> {
+                final Thread thread = new Thread(r);
+                thread.setDaemon(true);
+                thread.setName("resilience4j-" + thread.getName());
+                return thread;
+            });
+            return this;
+        }
+
+        /**
+         * TODO
+         */
+        public Builder withScheduledExecutor(ScheduledExecutorService scheduledExecutor) {
+            this.scheduledExecutor = scheduledExecutor;
+            return this;
+        }
+
+        /**
+         * Adds a {@link Retry} to the decorator chain.
+         *
+         * @param retry a fully configured {@link Retry}.
+         * @return the builder
+         */
+        public Builder withRetry(Retry retry) {
+            decorators.add((fn, m) -> {
+                if (isAsync(m)) {
+                    return (args) -> {
+                        checkNotNull(scheduledExecutor, "scheduledExecutor");
+                        return Retry.decorateCompletionStage(retry,
+                                                             scheduledExecutor,
+                                                             toSupplier(fn, args)).get();
+                    };
+                }
+                return Retry.decorateCheckedFunction(retry, fn);
+            });
+            return this;
+        }
+
+        /**
+         * Adds a {@link CircuitBreaker} to the decorator chain.
+         *
+         * @param circuitBreaker a fully configured {@link CircuitBreaker}.
+         * @return the builder
+         */
+        public Builder withCircuitBreaker(CircuitBreaker circuitBreaker) {
+            decorators.add((fn, m) -> {
+                if (isAsync(m)) {
+                    return (args) -> CircuitBreaker.decorateCompletionStage(circuitBreaker,
+                                                                            toSupplier(fn, args)).get();
+                }
+                return CircuitBreaker.decorateCheckedFunction(circuitBreaker, fn);
+            });
+            return this;
+        }
+
+        /**
+         * Adds a {@link RateLimiter} to the decorator chain.
+         *
+         * @param rateLimiter a fully configured {@link RateLimiter}.
+         * @return the builder
+         */
+        public Builder withRateLimiter(RateLimiter rateLimiter) {
+            decorators.add((fn, m) -> {
+                if (isAsync(m)) {
+                    return (args) -> RateLimiter.decorateCompletionStage(rateLimiter, toSupplier(fn, args)).get();
+                }
+                return RateLimiter.decorateCheckedFunction(rateLimiter, fn);
+            });
+            return this;
+        }
+
+        private boolean isAsync(Method method) {
+            return CompletionStage.class.isAssignableFrom(method.getReturnType());
+        }
+
+        private <R> Supplier<CompletionStage<R>> toSupplier(CheckedFunction1<Object[], R> function, Object[] args) {
+            return () -> {
+                try {
+                    return (CompletionStage<R>) function.apply(args);
+                } catch (Throwable throwable) {
+                    throw new RuntimeException(throwable);
+                }
+            };
+        }
+
+        /**
+         * Adds a {@link Bulkhead} to the decorator chain.
+         *
+         * @param bulkhead a fully configured {@link Bulkhead}.
+         * @return the builder
+         */
+        public Builder withBulkhead(Bulkhead bulkhead) {
+            decorators.add((fn, m) -> Bulkhead.decorateCheckedFunction(bulkhead, fn));
+            return this;
+        }
+
+        /**
+         * Adds a fallback to the decorator chain. Multiple fallbacks can be applied with the next
+         * fallback being called when the previous one fails.
+         *
+         * @param fallback must match the feign interface, i.e. the interface specified when calling
+         *                 {@link Resilience4jFeign.Builder#target(Class, String)}.
+         * @return the builder
+         */
+        public FeignDecorators.Builder withFallback(Object fallback) {
+            decorators.add(new FallbackDecorator<>(new FallbackFactory<>(ex -> fallback)));
+            return this;
+        }
+
+        /**
+         * Adds a fallback factory to the decorator chain. A factory can consume the exception
+         * thrown on error. Multiple fallbacks can be applied with the next fallback being called
+         * when the previous one fails.
+         *
+         * @param fallbackFactory must match the feign interface, i.e. the interface specified when
+         *                        calling {@link Resilience4jFeign.Builder#target(Class, String)}.
+         * @return the builder
+         */
+        public FeignDecorators.Builder withFallbackFactory(Function<Exception, ?> fallbackFactory) {
+            decorators.add(new FallbackDecorator<>(new FallbackFactory<>(fallbackFactory)));
+            return this;
+        }
+
+        /**
+         * Adds a fallback to the decorator chain. Multiple fallbacks can be applied with the next
+         * fallback being called when the previous one fails.
+         *
+         * @param fallback must match the feign interface, i.e. the interface specified when calling
+         *                 {@link Resilience4jFeign.Builder#target(Class, String)}.
+         * @param filter   only {@link Exception}s matching the specified {@link Exception} will
+         *                 trigger the fallback.
+         * @return the builder
+         */
+        public FeignDecorators.Builder withFallback(Object fallback, Class<? extends Exception> filter) {
+            decorators.add(new FallbackDecorator<>(new FallbackFactory<>(ex -> fallback), filter));
+            return this;
+        }
+
+        /**
+         * Adds a fallback factory to the decorator chain. A factory can consume the exception
+         * thrown on error. Multiple fallbacks can be applied with the next fallback being called
+         * when the previous one fails.
+         *
+         * @param fallbackFactory must match the feign interface, i.e. the interface specified when
+         *                        calling {@link Resilience4jFeign.Builder#target(Class, String)}.
+         * @param filter          only {@link Exception}s matching the specified {@link Exception}
+         *                        will trigger the fallback.
+         * @return the builder
+         */
+        public FeignDecorators.Builder withFallbackFactory(Function<Exception, ?> fallbackFactory,
+                                                           Class<? extends Exception> filter) {
+            decorators.add(new FallbackDecorator<>(new FallbackFactory<>(fallbackFactory), filter));
+            return this;
+        }
+
+        /**
+         * Adds a fallback to the decorator chain. Multiple fallbacks can be applied with the next
+         * fallback being called when the previous one fails.
+         *
+         * @param fallback must match the feign interface, i.e. the interface specified when calling
+         *                 {@link Resilience4jFeign.Builder#target(Class, String)}.
+         * @param filter   the filter must return <code>true</code> for the fallback to be called.
+         * @return the builder
+         */
+        public FeignDecorators.Builder withFallback(Object fallback, Predicate<Exception> filter) {
+            decorators.add(new FallbackDecorator<>(new FallbackFactory<>(ex -> fallback), filter));
+            return this;
+        }
+
+        /**
+         * Adds a fallback to the decorator chain. A factory can consume the exception thrown on
+         * error. Multiple fallbacks can be applied with the next fallback being called when the
+         * previous one fails.
+         *
+         * @param fallbackFactory must match the feign interface, i.e. the interface specified when
+         *                        calling {@link Resilience4jFeign.Builder#target(Class, String)}.
+         * @param filter          the filter must return <code>true</code> for the fallback to be
+         *                        called.
+         * @return the builder
+         */
+        public FeignDecorators.Builder withFallbackFactory(Function<Exception, ?> fallbackFactory,
+                                                           Predicate<Exception> filter) {
+            decorators.add(new FallbackDecorator<>(new FallbackFactory<>(fallbackFactory), filter));
+            return this;
+        }
+
+        /**
+         * Builds the decorator chain. This can then be used to setup an instance of {@link
+         * Resilience4jFeign}.
+         *
+         * @return the decorators.
+         */
+        public FeignDecorators build() {
+            return new FeignDecorators(decorators);
+        }
+    }
+}
