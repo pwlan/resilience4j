@@ -14,9 +14,11 @@
  *
  *
  */
-package io.github.resilience4j.feign.v2;
+package io.github.resilience4j.proxy;
 
 import feign.AsyncFeign;
+import io.github.resilience4j.core.lang.Nullable;
+import io.github.resilience4j.proxy.annotations.AnnotationDecorator;
 
 import static java.lang.reflect.Proxy.newProxyInstance;
 
@@ -25,21 +27,25 @@ import static java.lang.reflect.Proxy.newProxyInstance;
  */
 public final class Resilience4jFeign {
 
-    public static <C> TargetBuilder<C> build(FeignDecorator decorator,
+    public static <C> TargetBuilder<C> build(ProxyDecorator decorator,
                                              AsyncFeign.AsyncBuilder<C> feign) {
         return new TargetBuilder<>(decorator, feign);
     }
 
-    public static <C> TargetBuilder<C> build(FeignDecorator decorator) {
+    public static <C> TargetBuilder<C> build(ProxyDecorator decorator) {
         return build(decorator, AsyncFeign.asyncBuilder());
+    }
+
+    public static <C> TargetBuilder<C> build() {
+        return build(new AnnotationDecorator(), AsyncFeign.asyncBuilder());
     }
 
     public static final class TargetBuilder<C> {
 
-        private final FeignDecorator decorator;
+        private final ProxyDecorator decorator;
         private final AsyncFeign.AsyncBuilder<C> feign;
 
-        TargetBuilder(FeignDecorator decorator,
+        TargetBuilder(@Nullable ProxyDecorator decorator,
                       AsyncFeign.AsyncBuilder<C> feign) {
             this.feign = feign;
             this.decorator = decorator;

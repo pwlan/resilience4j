@@ -14,7 +14,7 @@
  *
  *
  */
-package io.github.resilience4j.feign.v2;
+package io.github.resilience4j.proxy;
 
 import io.vavr.CheckedFunction1;
 
@@ -26,7 +26,7 @@ import static java.util.Objects.requireNonNull;
 /**
  * Decorator that calls a fallback in the case that an exception is thrown.
  */
-class FallbackDecorator<T> implements FeignDecorator {
+class FallbackDecorator<T> implements ProxyDecorator {
 
     private final FallbackHandler<T> fallback;
     private final Predicate<Exception> filter;

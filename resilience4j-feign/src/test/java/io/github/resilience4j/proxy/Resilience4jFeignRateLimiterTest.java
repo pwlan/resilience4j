@@ -14,7 +14,7 @@
  *
  *
  */
-package io.github.resilience4j.feign.v2;
+package io.github.resilience4j.proxy;
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import feign.FeignException;
@@ -63,7 +63,7 @@ public class Resilience4jFeignRateLimiterTest {
     @Before
     public void setUp() {
         rateLimiter = mock(RateLimiter.class);
-        final FeignDecorators decorators = FeignDecorators.builder()
+        final ProxyDecorators decorators = ProxyDecorators.builder()
                                                           .withRateLimiter(rateLimiter)
                                                           .build();
         testService.init(decorators);

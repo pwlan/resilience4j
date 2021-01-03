@@ -14,7 +14,7 @@
  *
  *
  */
-package io.github.resilience4j.feign.v2;
+package io.github.resilience4j.proxy;
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import feign.FeignException;
@@ -65,7 +65,7 @@ public class Resilience4jFeignRetryTest {
     @Before
     public void setUp() {
         retry = Retry.ofDefaults("test");
-        final FeignDecorators decorators = FeignDecorators.builder()
+        final ProxyDecorators decorators = ProxyDecorators.builder()
                                                           .withDefaultScheduledExecutor()
                                                           .withRetry(retry)
                                                           .build();
@@ -104,7 +104,7 @@ public class Resilience4jFeignRetryTest {
                                             .retryExceptions(FeignException.class)
                                             .maxAttempts(2)
                                             .build());
-        final FeignDecorators decorators = FeignDecorators.builder()
+        final ProxyDecorators decorators = ProxyDecorators.builder()
                                                           .withDefaultScheduledExecutor()
                                                           .withRetry(retry)
                                                           .build();
@@ -122,7 +122,7 @@ public class Resilience4jFeignRetryTest {
     @Test
     public void testRetryOnResult() throws Throwable {
         retry = Retry.of("test", RetryConfig.<String>custom().retryOnResult(s -> s.equalsIgnoreCase("Hello, world")).maxAttempts(2).build());
-        final FeignDecorators decorators = FeignDecorators.builder()
+        final ProxyDecorators decorators = ProxyDecorators.builder()
                                                           .withDefaultScheduledExecutor()
                                                           .withRetry(retry)
                                                           .build();

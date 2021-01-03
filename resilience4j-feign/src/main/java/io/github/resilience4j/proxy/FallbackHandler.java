@@ -14,7 +14,7 @@
  *
  *
  */
-package io.github.resilience4j.feign.v2;
+package io.github.resilience4j.proxy;
 
 import io.vavr.CheckedFunction1;
 

@@ -14,13 +14,11 @@
  *
  *
  */
-package io.github.resilience4j.feign.v2;
+package io.github.resilience4j.proxy;
 
 import io.github.resilience4j.bulkhead.Bulkhead;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.feign.Resilience4jFeign;
-import io.github.resilience4j.feign.v2.FallbackDecorator;
-import io.github.resilience4j.feign.v2.FallbackFactory;
 import io.github.resilience4j.ratelimiter.RateLimiter;
 import io.github.resilience4j.retry.Retry;
 import io.vavr.CheckedFunction1;
@@ -61,11 +59,11 @@ import static java.util.concurrent.Executors.newScheduledThreadPool;
  * request fails and when the CircuitBreaker is open. <br> So be wary of this when designing your
  * "resilience" strategy.
  */
-public class FeignDecorators implements FeignDecorator {
+public class ProxyDecorators implements ProxyDecorator {
 
-    private final List<FeignDecorator> decorators;
+    private final List<ProxyDecorator> decorators;
 
-    private FeignDecorators(List<FeignDecorator> decorators) {
+    private ProxyDecorators(List<ProxyDecorator> decorators) {
         this.decorators = decorators;
     }
 
@@ -76,7 +74,7 @@ public class FeignDecorators implements FeignDecorator {
     @Override
     public CheckedFunction1<Object[], ?> decorate(CheckedFunction1<Object[], ?> fn, Method method) {
         CheckedFunction1<Object[], ?> decoratedFn = fn;
-        for (final FeignDecorator decorator : decorators) {
+        for (final ProxyDecorator decorator : decorators) {
             decoratedFn = decorator.decorate(decoratedFn, method);
         }
         return decoratedFn;
@@ -84,7 +82,7 @@ public class FeignDecorators implements FeignDecorator {
 
     public static final class Builder {
 
-        private final List<FeignDecorator> decorators = new ArrayList<>();
+        private final List<ProxyDecorator> decorators = new ArrayList<>();
         private ScheduledExecutorService scheduledExecutor;
 
         /**
@@ -195,7 +193,7 @@ public class FeignDecorators implements FeignDecorator {
          *                 {@link Resilience4jFeign.Builder#target(Class, String)}.
          * @return the builder
          */
-        public FeignDecorators.Builder withFallback(Object fallback) {
+        public ProxyDecorators.Builder withFallback(Object fallback) {
             decorators.add(new FallbackDecorator<>(new FallbackFactory<>(ex -> fallback)));
             return this;
         }
@@ -209,7 +207,7 @@ public class FeignDecorators implements FeignDecorator {
          *                        calling {@link Resilience4jFeign.Builder#target(Class, String)}.
          * @return the builder
          */
-        public FeignDecorators.Builder withFallbackFactory(Function<Exception, ?> fallbackFactory) {
+        public ProxyDecorators.Builder withFallbackFactory(Function<Exception, ?> fallbackFactory) {
             decorators.add(new FallbackDecorator<>(new FallbackFactory<>(fallbackFactory)));
             return this;
         }
@@ -224,7 +222,7 @@ public class FeignDecorators implements FeignDecorator {
          *                 trigger the fallback.
          * @return the builder
          */
-        public FeignDecorators.Builder withFallback(Object fallback, Class<? extends Exception> filter) {
+        public ProxyDecorators.Builder withFallback(Object fallback, Class<? extends Exception> filter) {
             decorators.add(new FallbackDecorator<>(new FallbackFactory<>(ex -> fallback), filter));
             return this;
         }
@@ -240,7 +238,7 @@ public class FeignDecorators implements FeignDecorator {
          *                        will trigger the fallback.
          * @return the builder
          */
-        public FeignDecorators.Builder withFallbackFactory(Function<Exception, ?> fallbackFactory,
+        public ProxyDecorators.Builder withFallbackFactory(Function<Exception, ?> fallbackFactory,
                                                            Class<? extends Exception> filter) {
             decorators.add(new FallbackDecorator<>(new FallbackFactory<>(fallbackFactory), filter));
             return this;
@@ -255,7 +253,7 @@ public class FeignDecorators implements FeignDecorator {
          * @param filter   the filter must return <code>true</code> for the fallback to be called.
          * @return the builder
          */
-        public FeignDecorators.Builder withFallback(Object fallback, Predicate<Exception> filter) {
+        public ProxyDecorators.Builder withFallback(Object fallback, Predicate<Exception> filter) {
             decorators.add(new FallbackDecorator<>(new FallbackFactory<>(ex -> fallback), filter));
             return this;
         }
@@ -271,7 +269,7 @@ public class FeignDecorators implements FeignDecorator {
          *                        called.
          * @return the builder
          */
-        public FeignDecorators.Builder withFallbackFactory(Function<Exception, ?> fallbackFactory,
+        public ProxyDecorators.Builder withFallbackFactory(Function<Exception, ?> fallbackFactory,
                                                            Predicate<Exception> filter) {
             decorators.add(new FallbackDecorator<>(new FallbackFactory<>(fallbackFactory), filter));
             return this;
@@ -283,8 +281,8 @@ public class FeignDecorators implements FeignDecorator {
          *
          * @return the decorators.
          */
-        public FeignDecorators build() {
-            return new FeignDecorators(decorators);
+        public ProxyDecorators build() {
+            return new ProxyDecorators(decorators);
         }
     }
 }

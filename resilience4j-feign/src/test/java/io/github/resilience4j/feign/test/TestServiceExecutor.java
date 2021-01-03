@@ -1,7 +1,7 @@
 package io.github.resilience4j.feign.test;
 
-import io.github.resilience4j.feign.v2.FeignDecorators;
-import io.github.resilience4j.feign.v2.Resilience4jFeign;
+import io.github.resilience4j.proxy.ProxyDecorators;
+import io.github.resilience4j.proxy.Resilience4jFeign;
 import org.mockito.Mockito;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -14,7 +14,7 @@ public class TestServiceExecutor extends AbstractTestServiceExecutor {
     private TestService fallback = mock(TestService.class);
 
     @Override
-    public void init(FeignDecorators decorators) {
+    public void init(ProxyDecorators decorators) {
         testService = Resilience4jFeign.build(decorators).target(TestService.class, MOCK_URL);
         reset(fallback);
         when(fallback.greeting()).thenReturn("fallback");

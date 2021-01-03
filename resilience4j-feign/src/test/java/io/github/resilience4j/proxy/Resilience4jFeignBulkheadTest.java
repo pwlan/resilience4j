@@ -1,4 +1,4 @@
-package io.github.resilience4j.feign.v2;
+package io.github.resilience4j.proxy;
 
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
@@ -18,8 +18,6 @@ import org.junit.runners.Parameterized;
 import java.util.Arrays;
 import java.util.Collection;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.verify;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.*;
 
 /**
@@ -47,7 +45,7 @@ public class Resilience4jFeignBulkheadTest {
     @Before
     public void setUp() {
         bulkhead = spy(Bulkhead.of("bulkheadTest", BulkheadConfig.ofDefaults()));
-        final FeignDecorators decorators = FeignDecorators.builder()
+        final ProxyDecorators decorators = ProxyDecorators.builder()
                                                           .withBulkhead(bulkhead)
                                                           .build();
         testService.init(decorators);

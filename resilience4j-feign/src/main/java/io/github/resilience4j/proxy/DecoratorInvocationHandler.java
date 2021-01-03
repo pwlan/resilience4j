@@ -1,4 +1,4 @@
-package io.github.resilience4j.feign.v2;
+package io.github.resilience4j.proxy;
 
 import io.vavr.CheckedFunction1;
 
@@ -15,10 +15,10 @@ class DecoratorInvocationHandler<T> implements InvocationHandler {
 
     private final Class<T> type;
     private final T instance;
-    private final FeignDecorator invocationDecorator;
+    private final ProxyDecorator invocationDecorator;
     private final Map<Method, CheckedFunction1<Object[], ?>> decoratedDispatch = new ConcurrentHashMap<>();
 
-    DecoratorInvocationHandler(Class<T> type, T instance, FeignDecorator invocationDecorator) {
+    DecoratorInvocationHandler(Class<T> type, T instance, ProxyDecorator invocationDecorator) {
         this.type = type;
         this.instance = instance;
         this.invocationDecorator = invocationDecorator;
@@ -43,10 +43,12 @@ class DecoratorInvocationHandler<T> implements InvocationHandler {
     }
 
     private CheckedFunction1<Object[], ?> decorateMethod(Method method) {
+        final CheckedFunction1<Object[], ?> methodAsFunction = asFunction(method);
         if (!isDeclaredByType(method)) {
-            return asFunction(method);
+            return methodAsFunction;
         }
-        return invocationDecorator.decorate(asFunction(method), method);
+        method.setAccessible(true);
+        return invocationDecorator.decorate(methodAsFunction, method);
     }
 
     private CheckedFunction1<Object[], ?> asFunction(Method method) {

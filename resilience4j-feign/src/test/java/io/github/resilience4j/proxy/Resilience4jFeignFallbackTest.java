@@ -14,12 +14,11 @@
  *
  *
  */
-package io.github.resilience4j.feign.v2;
+package io.github.resilience4j.proxy;
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import feign.FeignException;
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
-import io.github.resilience4j.feign.v2.FeignDecorators;
 import io.github.resilience4j.feign.test.AbstractTestServiceExecutor;
 import io.github.resilience4j.feign.test.AsyncTestServiceExecutor;
 import io.github.resilience4j.feign.test.TestService;
@@ -60,7 +59,7 @@ public class Resilience4jFeignFallbackTest {
 
     @Before
     public void setUp() {
-        final FeignDecorators decorators = FeignDecorators.builder()
+        final ProxyDecorators decorators = ProxyDecorators.builder()
                                                           .withFallback(testService.getFallback())
                                                           .build();
         testService.init(decorators);
@@ -79,7 +78,7 @@ public class Resilience4jFeignFallbackTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testInvalidFallback() throws Throwable {
-        final FeignDecorators decorators = FeignDecorators.builder()
+        final ProxyDecorators decorators = ProxyDecorators.builder()
                                                           .withFallback("not a fallback")
                                                           .build();
         testService.init(decorators);
@@ -105,7 +104,7 @@ public class Resilience4jFeignFallbackTest {
         final TestService testServiceExceptionFallback = mock(TestService.class);
         when(testServiceExceptionFallback.greeting()).thenReturn("exception fallback");
 
-        final FeignDecorators decorators = FeignDecorators.builder()
+        final ProxyDecorators decorators = ProxyDecorators.builder()
                                                           .withFallback(testServiceExceptionFallback, FeignException.class)
                                                           .withFallback(testService.getFallback())
                                                           .build();
@@ -127,7 +126,7 @@ public class Resilience4jFeignFallbackTest {
         final TestService testServiceExceptionFallback = mock(TestService.class);
         when(testServiceExceptionFallback.greeting()).thenReturn("exception fallback");
 
-        final FeignDecorators decorators = FeignDecorators.builder()
+        final ProxyDecorators decorators = ProxyDecorators.builder()
                                                           .withFallback(testServiceExceptionFallback, CallNotPermittedException.class)
                                                           .withFallback(testService.getFallback())
                                                           .build();
@@ -149,7 +148,7 @@ public class Resilience4jFeignFallbackTest {
         final TestService testServiceFilterFallback = mock(TestService.class);
         when(testServiceFilterFallback.greeting()).thenReturn("filter fallback");
 
-        final FeignDecorators decorators = FeignDecorators.builder()
+        final ProxyDecorators decorators = ProxyDecorators.builder()
                                                           .withFallback(testServiceFilterFallback, ex -> true)
                                                           .withFallback(testService.getFallback())
                                                           .build();
@@ -171,7 +170,7 @@ public class Resilience4jFeignFallbackTest {
         final TestService testServiceFilterFallback = mock(TestService.class);
         when(testServiceFilterFallback.greeting()).thenReturn("filter fallback");
 
-        final FeignDecorators decorators = FeignDecorators.builder()
+        final ProxyDecorators decorators = ProxyDecorators.builder()
                                                           .withFallback(testServiceFilterFallback, ex -> false)
                                                           .withFallback(testService.getFallback())
                                                           .build();

@@ -14,10 +14,9 @@
  *
  *
  */
-package io.github.resilience4j.feign.v2;
+package io.github.resilience4j.proxy;
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
-import io.github.resilience4j.feign.v2.FeignDecorators;
 import io.github.resilience4j.feign.test.*;
 import org.junit.Before;
 import org.junit.Rule;
@@ -53,7 +52,7 @@ public class Resilience4jFeignFallbackLambdaTest {
 
     @Before
     public void setUp() {
-        final FeignDecorators decorators = FeignDecorators.builder()
+        final ProxyDecorators decorators = ProxyDecorators.builder()
                                                           .withFallback(Issue560.createLambdaFallback())
                                                           .build();
         testService.init(decorators);

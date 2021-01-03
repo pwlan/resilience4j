@@ -14,7 +14,7 @@
  *
  *
  */
-package io.github.resilience4j.feign.v2;
+package io.github.resilience4j.proxy;
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import feign.FeignException;
@@ -64,7 +64,7 @@ public class Resilience4jFeignCircuitBreakerTest {
     @Before
     public void setUp() {
         circuitBreaker = CircuitBreaker.of("test", circuitBreakerConfig);
-        final FeignDecorators decorators = FeignDecorators.builder()
+        final ProxyDecorators decorators = ProxyDecorators.builder()
                                                           .withCircuitBreaker(circuitBreaker)
                                                           .build();
         testService.init(decorators);

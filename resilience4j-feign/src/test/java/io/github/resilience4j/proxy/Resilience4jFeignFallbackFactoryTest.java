@@ -14,11 +14,10 @@
  *
  *
  */
-package io.github.resilience4j.feign.v2;
+package io.github.resilience4j.proxy;
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import feign.FeignException;
-import io.github.resilience4j.feign.v2.FeignDecorators;
 import io.github.resilience4j.feign.test.*;
 import org.junit.Rule;
 import org.junit.Test;
@@ -57,7 +56,7 @@ public class Resilience4jFeignFallbackFactoryTest {
     }
 
     private void buildTestService(Function<Exception, ?> fallbackSupplier) {
-        FeignDecorators decorators = FeignDecorators.builder()
+        ProxyDecorators decorators = ProxyDecorators.builder()
                                                     .withFallbackFactory(fallbackSupplier)
                                                     .build();
         testService.init(decorators);
@@ -114,7 +113,7 @@ public class Resilience4jFeignFallbackFactoryTest {
     public void should_go_to_fallback_and_consume_exception_with_exception_filter() throws Throwable {
         TestService uselessFallback = spy(TestService.class);
         when(uselessFallback.greeting()).thenReturn("I should not be called");
-        FeignDecorators decorators = FeignDecorators.builder()
+        ProxyDecorators decorators = ProxyDecorators.builder()
                                                     .withFallbackFactory(TestServiceFallbackWithException::new, FeignException.class)
                                                     .withFallbackFactory(e -> uselessFallback)
                                                     .build();
@@ -133,7 +132,7 @@ public class Resilience4jFeignFallbackFactoryTest {
     public void should_go_to_second_fallback_and_consume_exception_with_exception_filter() throws Throwable {
         TestService uselessFallback = spy(TestService.class);
         when(uselessFallback.greeting()).thenReturn("I should not be called");
-        FeignDecorators decorators = FeignDecorators.builder()
+        ProxyDecorators decorators = ProxyDecorators.builder()
                                                     .withFallbackFactory(e -> uselessFallback, MyException.class)
                                                     .withFallbackFactory(TestServiceFallbackWithException::new)
                                                     .build();
@@ -152,7 +151,7 @@ public class Resilience4jFeignFallbackFactoryTest {
     public void should_go_to_fallback_and_consume_exception_with_predicate() throws Throwable {
         TestService uselessFallback = spy(TestService.class);
         when(uselessFallback.greeting()).thenReturn("I should not be called");
-        FeignDecorators decorators = FeignDecorators.builder()
+        ProxyDecorators decorators = ProxyDecorators.builder()
                                                     .withFallbackFactory(TestServiceFallbackWithException::new,
                                                                          FeignException.class::isInstance)
                                                     .withFallbackFactory(e -> uselessFallback)
@@ -172,7 +171,7 @@ public class Resilience4jFeignFallbackFactoryTest {
     public void should_go_to_second_fallback_and_consume_exception_with_predicate() throws Throwable {
         TestService uselessFallback = spy(TestService.class);
         when(uselessFallback.greeting()).thenReturn("I should not be called");
-        FeignDecorators decorators = FeignDecorators.builder()
+        ProxyDecorators decorators = ProxyDecorators.builder()
                                                     .withFallbackFactory(e -> uselessFallback, MyException.class::isInstance)
                                                     .withFallbackFactory(TestServiceFallbackWithException::new)
                                                     .build();

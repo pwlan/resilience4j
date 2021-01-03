@@ -14,7 +14,7 @@
  *
  *
  */
-package io.github.resilience4j.feign.v2;
+package io.github.resilience4j.proxy;
 
 import io.vavr.CheckedFunction1;
 
@@ -22,10 +22,10 @@ import java.lang.reflect.Method;
 
 /**
  * Used to decorate methods defined by feign interfaces. Decorators can be stacked, allowing
- * multiple Decorators to be combined. See {@link FeignDecorators}.
+ * multiple Decorators to be combined. See {@link ProxyDecorators}.
  */
 @FunctionalInterface
-public interface FeignDecorator {
+public interface ProxyDecorator {
 
     /**
      * Decorates the invocation of a method defined by a feign interface.

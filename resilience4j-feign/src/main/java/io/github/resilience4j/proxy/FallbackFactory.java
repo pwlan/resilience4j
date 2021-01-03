@@ -14,7 +14,7 @@
  *
  *
  */
-package io.github.resilience4j.feign.v2;
+package io.github.resilience4j.proxy;
 
 import io.vavr.CheckedFunction1;
 
@@ -24,8 +24,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
 import java.util.function.Predicate;
-
-import static io.github.resilience4j.feign.v2.FallbackMethodFinder.getFallbackMethod;
 
 /**
  * A {@link FallbackHandler} wrapping a fallback of type {@param T} whose instance will consume the
@@ -67,7 +65,7 @@ class FallbackFactory<T> implements FallbackHandler<T> {
 
     private Object executeFallback(Method method, Exception exception, Object[] args) throws Throwable {
         final T fallbackInstance = fallbackSupplier.apply(exception);
-        final Method fallback = getFallbackMethod(fallbackInstance, method);
+        final Method fallback = FallbackMethodFinder.getFallbackMethod(fallbackInstance, method);
         try {
             return fallback.invoke(fallbackInstance, args);
         } catch (InvocationTargetException ex) {
