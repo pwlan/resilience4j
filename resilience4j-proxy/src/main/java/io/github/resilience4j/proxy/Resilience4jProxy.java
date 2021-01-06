@@ -16,12 +16,15 @@
  */
 package io.github.resilience4j.proxy;
 
+import java.util.Map;
+
 import static java.lang.reflect.Proxy.newProxyInstance;
 
 /**
  * TODO
  */
 public final class Resilience4jProxy {
+
     private final ProxyDecorator decorator;
 
     private Resilience4jProxy(ProxyDecorator decorator) {
@@ -34,11 +37,15 @@ public final class Resilience4jProxy {
                                              new DecoratorInvocationHandler<>(apiType, target, decorator)));
     }
 
-    public static Resilience4jProxy build(ProxyDecorator decorator) {
+    private static Resilience4jProxy build(ProxyDecorator decorator) {
         return new Resilience4jProxy(decorator);
     }
 
     public static Resilience4jProxy build() {
         return build(new AnnotationDecorator());
+    }
+
+    public static <T> Resilience4jProxy build(Map<Class<?>, ?> instances) {
+        return build(new AnnotationDecorator(instances));
     }
 }

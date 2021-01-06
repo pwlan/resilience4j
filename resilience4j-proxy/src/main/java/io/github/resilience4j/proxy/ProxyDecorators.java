@@ -60,7 +60,7 @@ import static java.util.concurrent.Executors.newScheduledThreadPool;
  * request fails and when the CircuitBreaker is open. <br> So be wary of this when designing your
  * "resilience" strategy.
  */
-class ProxyDecorators implements ProxyDecorator {
+final class ProxyDecorators implements ProxyDecorator {
 
     private final List<ProxyDecorator> decorators;
 

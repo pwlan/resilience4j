@@ -16,12 +16,12 @@
 package io.github.resilience4j.proxy.retry;
 
 import java.lang.annotation.*;
+import java.util.function.Predicate;
 
 /**
- * This annotation can be applied to a class or a specific method. Applying it on a class is
- * equivalent to applying it on all its public methods. The annotation enables backend retry for all
- * methods where it is applied. Backend retry is performed via a retry. If using Spring,
- * {@code name} and {@code fallbackMethod} can be resolved using Spring Expression Language (SpEL).
+ * This annotation can be applied to an interface or a method of an interface. Applying it on an interface is
+ * equivalent to applying it on all its public methods. Each method can override the Retry annotation
+ * specified on the interface by specifying their own annotation.
  */
 @Retention(value = RetentionPolicy.RUNTIME)
 @Target(value = {ElementType.METHOD, ElementType.TYPE})
@@ -29,16 +29,33 @@ import java.lang.annotation.*;
 public @interface Retry {
 
     /**
-     * Name of the sync retry.
-     * It can be SpEL expression. If you want to use first parameter of the method as name, you can
-     * express it {@code #root.args[0]}, {@code #p0} or {@code #a0}. And method name can be accessed via
-     * {@code #root.methodName}
-     *
-     * @return the name of the sync retry.
+     * @return the name of the retry.
      */
     String name();
 
+    /**
+     * @return the number of retries to perform.
+     */
     int maxAttempts() default -1;
 
+    /**
+     * @return the Exceptions to perform a retry on.
+     */
     Class<? extends Throwable>[] retryExceptions() default {};
+
+    Class<? extends Predicate<?>> retryOnResult() default None.class;
+
+    Class<? extends Predicate<Throwable>> retryOnException() default None.class;
+
+    /**
+     * @return the duration in milliseconds to wait between retries.
+     */
+    long waitDuration();
+
+    /**
+     * Indicates that there is no default specified.
+     */
+    abstract class None implements Predicate<Throwable> {
+    }
 }
+
