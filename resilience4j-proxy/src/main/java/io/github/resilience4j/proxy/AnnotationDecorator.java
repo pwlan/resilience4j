@@ -1,7 +1,6 @@
 package io.github.resilience4j.proxy;
 
 import io.github.resilience4j.core.lang.Nullable;
-import io.github.resilience4j.proxy.bulkhead.BulkheadProcessor;
 import io.github.resilience4j.proxy.circuitbreaker.CircuitBreakerProcessor;
 import io.github.resilience4j.proxy.fallback.FallbackProcessor;
 import io.github.resilience4j.proxy.rateLimiter.RateLimiterProcessor;
@@ -13,15 +12,16 @@ import java.util.Map;
 
 final class AnnotationDecorator implements ProxyDecorator {
 
-    private final RateLimiterProcessor rateLimiterProcessor = new RateLimiterProcessor();
+    private final RateLimiterProcessor rateLimiterProcessor;
     private final FallbackProcessor fallbackProcessor;
-    private final RetryProcessor retryProcessor = new RetryProcessor();
+    private final RetryProcessor retryProcessor;
     private final CircuitBreakerProcessor circuitBreakerProcessor = new CircuitBreakerProcessor();
-    private final BulkheadProcessor bulkheadProcessor = new BulkheadProcessor();
 
-    public <T> AnnotationDecorator(@Nullable Map<Class<?>, ?> instances) {
+    public <T> AnnotationDecorator(@Nullable Map<Class<?>, ?> context) {
         // TODO validate instances
-        fallbackProcessor = new FallbackProcessor(instances);
+        fallbackProcessor = new FallbackProcessor(context);
+        retryProcessor = new RetryProcessor(context);
+        rateLimiterProcessor = new RateLimiterProcessor(context);
     }
 
     public AnnotationDecorator() {
@@ -39,7 +39,6 @@ final class AnnotationDecorator implements ProxyDecorator {
             builder.withRetry(r.getRetry());
         });
         fallbackProcessor.process(method).ifPresent(builder::withFallback);
-        bulkheadProcessor.process(method).ifPresent(builder::withBulkhead);
         rateLimiterProcessor.process(method).ifPresent(builder::withRateLimiter);
         circuitBreakerProcessor.process(method).ifPresent(builder::withCircuitBreaker);
 

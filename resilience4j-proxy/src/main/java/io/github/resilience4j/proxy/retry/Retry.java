@@ -15,8 +15,11 @@
  */
 package io.github.resilience4j.proxy.retry;
 
+import io.github.resilience4j.retry.RetryConfig;
+
 import java.lang.annotation.*;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 /**
  * This annotation can be applied to an interface or a method of an interface. Applying it on an interface is
@@ -34,28 +37,34 @@ public @interface Retry {
     String name();
 
     /**
+     * @return a supplier that provides the entire config. If this is set, then all other config values are ignored.
+     */
+    Class<? extends Supplier<RetryConfig>> configProvider() default None.class;
+
+    /**
      * @return the number of retries to perform.
      */
     int maxAttempts() default -1;
 
     /**
-     * @return the Exceptions to perform a retry on.
+     * @return the duration in milliseconds to wait between retries.
+     */
+    long waitDuration() default -1;
+
+    /**
+     * @return the Exceptions that trigger a retry.
      */
     Class<? extends Throwable>[] retryExceptions() default {};
 
-    Class<? extends Predicate<?>> retryOnResult() default None.class;
-
+    /**
+     * @return a predicate that decides if a retry is triggered.
+     */
     Class<? extends Predicate<Throwable>> retryOnException() default None.class;
 
     /**
-     * @return the duration in milliseconds to wait between retries.
+     * Indicates that there is no value specified.
      */
-    long waitDuration();
-
-    /**
-     * Indicates that there is no default specified.
-     */
-    abstract class None implements Predicate<Throwable> {
+    abstract class None implements Predicate<Throwable>, Supplier<RetryConfig> {
     }
 }
 
