@@ -16,11 +16,9 @@
  */
 package io.github.resilience4j.proxy;
 
-import io.github.resilience4j.bulkhead.Bulkhead;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.proxy.fallback.FallbackDecorator;
 import io.github.resilience4j.proxy.fallback.FallbackFactory;
-import io.github.resilience4j.proxy.reflect.Methods;
 import io.github.resilience4j.ratelimiter.RateLimiter;
 import io.github.resilience4j.retry.Retry;
 import io.vavr.CheckedFunction1;
@@ -32,7 +30,7 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Supplier;
 
-import static io.github.resilience4j.proxy.reflect.Methods.isAsync;
+import static io.github.resilience4j.proxy.util.Reflect.isAsync;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.Executors.newScheduledThreadPool;
 
@@ -158,17 +156,6 @@ final class ProxyDecorators implements ProxyDecorator {
                 }
                 return RateLimiter.decorateCheckedFunction(rateLimiter, fn);
             });
-            return this;
-        }
-
-        /**
-         * Adds a {@link Bulkhead} to the decorator chain.
-         *
-         * @param bulkhead a fully configured {@link Bulkhead}.
-         * @return the builder
-         */
-        public Builder withBulkhead(Bulkhead bulkhead) {
-            decorators.add((fn, m) -> Bulkhead.decorateCheckedFunction(bulkhead, fn));
             return this;
         }
 

@@ -6,7 +6,7 @@ import  io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import java.lang.reflect.Method;
 import java.util.Optional;
 
-import static io.github.resilience4j.proxy.reflect.AnnotationFinder.find;
+import static io.github.resilience4j.proxy.util.AnnotationFinder.find;
 import static java.time.Duration.ofMillis;
 
 public class CircuitBreakerProcessor {

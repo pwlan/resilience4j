@@ -10,8 +10,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static io.github.resilience4j.proxy.reflect.AnnotationFinder.find;
-import static io.github.resilience4j.proxy.reflect.Methods.newInstance;
+import static io.github.resilience4j.proxy.util.AnnotationFinder.find;
+import static io.github.resilience4j.proxy.util.Reflect.newInstance;
 
 public class RateLimiterProcessor {
 

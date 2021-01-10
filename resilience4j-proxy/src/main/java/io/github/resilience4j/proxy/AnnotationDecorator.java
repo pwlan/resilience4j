@@ -8,6 +8,7 @@ import io.github.resilience4j.proxy.retry.RetryProcessor;
 import io.vavr.CheckedFunction1;
 
 import java.lang.reflect.Method;
+import java.util.List;
 import java.util.Map;
 
 final class AnnotationDecorator implements ProxyDecorator {
@@ -30,18 +31,10 @@ final class AnnotationDecorator implements ProxyDecorator {
 
     @Override
     public CheckedFunction1<Object[], ?> decorate(CheckedFunction1<Object[], ?> invocationCall, Method method) {
-        final ProxyDecorators.Builder builder = ProxyDecorators.builder();
+        CheckedFunction1<Object[], ?> result = invocationCall;
 
-        retryProcessor.process(method).ifPresent(r -> {
-            if (r.isAsync()) {
-                builder.withDefaultScheduledExecutor();
-            }
-            builder.withRetry(r.getRetry());
-        });
-        fallbackProcessor.process(method).ifPresent(builder::withFallback);
-        rateLimiterProcessor.process(method).ifPresent(builder::withRateLimiter);
-        circuitBreakerProcessor.process(method).ifPresent(builder::withCircuitBreaker);
+        retryProcessor.process(method).ifPresent(d -> d.decorate(invocationCall, method));
 
-        return builder.build().decorate(invocationCall, method);
+        return result;
     }
 }

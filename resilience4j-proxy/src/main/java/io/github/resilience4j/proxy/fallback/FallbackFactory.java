@@ -16,7 +16,7 @@
  */
 package io.github.resilience4j.proxy.fallback;
 
-import io.github.resilience4j.proxy.reflect.Methods;
+import io.github.resilience4j.proxy.util.Reflect;
 import io.vavr.CheckedFunction1;
 
 import java.lang.reflect.InvocationTargetException;
@@ -61,7 +61,7 @@ public class FallbackFactory<T> {
 
     private Object executeFallback(Method method, Exception exception, Object[] args) throws Throwable {
         final T fallbackInstance = fallbackSupplier.apply(exception);
-        final Method fallback = Methods.getFallbackMethod(fallbackInstance, method);
+        final Method fallback = Reflect.getFallbackMethod(fallbackInstance, method);
         try {
             return fallback.invoke(fallbackInstance, args);
         } catch (InvocationTargetException ex) {

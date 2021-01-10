@@ -1,13 +1,15 @@
-package io.github.resilience4j.proxy.reflect;
+package io.github.resilience4j.proxy.util;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Map;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ConcurrentHashMap;
 
-public final class Methods {
+public final class Reflect {
 
-    private Methods() {
+    private Reflect() {
     }
 
     public static <T> T newInstance(Class<T> instanceClass) throws NoSuchMethodException,
@@ -17,6 +19,21 @@ public final class Methods {
         final Constructor<T> constructor = instanceClass.getDeclaredConstructor();
         constructor.setAccessible(true);
         return constructor.newInstance();
+    }
+
+    public static <T> T newInstance(Class<T> instanceClass, Map<Class<?>, Object> cache) {
+        try {
+            final Object result = cache.computeIfAbsent(instanceClass, key -> {
+                try {
+                    return newInstance(instanceClass);
+                } catch (Exception e) {
+                    throw new IllegalArgumentException("TODO");
+                }
+            });
+            return (T) result;
+        } catch (ClassCastException e) {
+            throw new IllegalArgumentException("TODO");
+        }
     }
 
     public static Method getFallbackMethod(Object fallbackInstance, Method method) {

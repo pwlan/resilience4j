@@ -1,4 +1,4 @@
-package io.github.resilience4j.proxy.reflect;
+package io.github.resilience4j.proxy.util;
 
 import io.github.resilience4j.proxy.fallback.Fallback;
 import io.github.resilience4j.proxy.retry.Retry;

@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Mahmoud Romeh
+ * Copyright 2021
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,13 +21,17 @@ import java.lang.annotation.*;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
+import static java.lang.annotation.ElementType.METHOD;
+import static java.lang.annotation.ElementType.TYPE;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
+
 /**
+ * Adds the Retry mechanism.
  * This annotation can be applied to an interface or a method of an interface. Applying it on an interface is
- * equivalent to applying it on all its public methods. Each method can override the Retry annotation
- * specified on the interface by specifying their own annotation.
+ * equivalent to applying it on all its methods. Each annotation on a method overrides any class level annotations.
  */
-@Retention(value = RetentionPolicy.RUNTIME)
-@Target(value = {ElementType.METHOD, ElementType.TYPE})
+@Retention(value = RUNTIME)
+@Target(value = {METHOD, TYPE})
 @Documented
 public @interface Retry {
 
@@ -62,7 +66,7 @@ public @interface Retry {
     Class<? extends Predicate<Throwable>> retryOnException() default None.class;
 
     /**
-     * Indicates that there is no value specified.
+     * Indicates there is no value specified.
      */
     abstract class None implements Predicate<Throwable>, Supplier<RetryConfig> {
     }
