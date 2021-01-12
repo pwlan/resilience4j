@@ -16,13 +16,14 @@ final class AnnotationDecorator implements ProxyDecorator {
     private final RateLimiterProcessor rateLimiterProcessor;
     private final FallbackProcessor fallbackProcessor;
     private final RetryProcessor retryProcessor;
-    private final CircuitBreakerProcessor circuitBreakerProcessor = new CircuitBreakerProcessor();
+    private final CircuitBreakerProcessor circuitBreakerProcessor;
 
     public <T> AnnotationDecorator(@Nullable Map<Class<?>, ?> context) {
         // TODO validate instances
         fallbackProcessor = new FallbackProcessor(context);
         retryProcessor = new RetryProcessor(context);
         rateLimiterProcessor = new RateLimiterProcessor(context);
+        circuitBreakerProcessor =  new CircuitBreakerProcessor(context);
     }
 
     public AnnotationDecorator() {
@@ -34,6 +35,8 @@ final class AnnotationDecorator implements ProxyDecorator {
         CheckedFunction1<Object[], ?> result = invocationCall;
 
         retryProcessor.process(method).ifPresent(d -> d.decorate(invocationCall, method));
+        rateLimiterProcessor.process(method).ifPresent(d -> d.decorate(invocationCall, method));
+        circuitBreakerProcessor.process(method).ifPresent(d -> d.decorate(invocationCall, method));
 
         return result;
     }

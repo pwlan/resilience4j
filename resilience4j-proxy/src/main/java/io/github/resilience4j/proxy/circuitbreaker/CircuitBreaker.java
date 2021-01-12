@@ -20,13 +20,17 @@ import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
 import java.lang.annotation.*;
 import java.util.function.Supplier;
 
+import static java.lang.annotation.ElementType.METHOD;
+import static java.lang.annotation.ElementType.TYPE;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
+
 /**
+ * Adds the CircuitBreaker mechanism.
  * This annotation can be applied to an interface or a method of an interface. Applying it on an interface is
- * equivalent to applying it on all its public methods. Each method can override the Retry annotation
- * specified on the interface by specifying their own annotation.
+ * equivalent to applying it on all its methods. Each annotation on a method overrides any class level annotations.
  */
-@Retention(value = RetentionPolicy.RUNTIME)
-@Target(value = {ElementType.METHOD, ElementType.TYPE})
+@Retention(value = RUNTIME)
+@Target(value = {METHOD, TYPE})
 @Documented
 public @interface CircuitBreaker {
 
@@ -39,6 +43,16 @@ public @interface CircuitBreaker {
      * @return a supplier that provides the entire config. If this is set, then all other config values are ignored.
      */
     Class<? extends Supplier<CircuitBreakerConfig>> configProvider() default None.class;
+
+    /**
+     * @return the slidingWindowSize.
+     */
+    int slidingWindowSize() default -1;
+
+    /**
+     * @return the waitDurationInOpenState.
+     */
+    long waitDurationInOpenState() default -1;
 
     /**
      * Indicates that there is no value specified.

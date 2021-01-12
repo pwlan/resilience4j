@@ -1,6 +1,7 @@
 package io.github.resilience4j.proxy.rateLimiter;
 
 import io.github.resilience4j.core.lang.Nullable;
+import io.github.resilience4j.proxy.ProxyDecorator;
 import io.github.resilience4j.proxy.rateLimiter.RateLimiter.None;
 import io.github.resilience4j.ratelimiter.RateLimiter;
 import io.github.resilience4j.ratelimiter.RateLimiterConfig;
@@ -13,6 +14,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import static io.github.resilience4j.proxy.util.AnnotationFinder.find;
 import static io.github.resilience4j.proxy.util.Reflect.newInstance;
 
+/**
+ * Processes {@link io.github.resilience4j.proxy.rateLimiter.RateLimiter} annotations and returns
+ * a corresponding {@link io.github.resilience4j.proxy.ProxyDecorator}.
+ */
 public class RateLimiterProcessor {
 
     private final Map<Class<?>, Object> context = new ConcurrentHashMap<>();
@@ -23,7 +28,7 @@ public class RateLimiterProcessor {
         }
     }
 
-    public Optional<RateLimiter> process(Method method) {
+    public Optional<ProxyDecorator> process(Method method) {
         final io.github.resilience4j.proxy.rateLimiter.RateLimiter annotation =
             find(io.github.resilience4j.proxy.rateLimiter.RateLimiter.class, method);
 
@@ -32,14 +37,15 @@ public class RateLimiterProcessor {
         }
 
         final RateLimiterConfig config = buildConfig(annotation);
-        return Optional.of(RateLimiter.of(annotation.name(), config));
+        final RateLimiter rateLimiter = RateLimiter.of(annotation.name(), config);
+        return Optional.of(new RateLimiterDecorator(rateLimiter));
     }
 
     private RateLimiterConfig buildConfig(io.github.resilience4j.proxy.rateLimiter.RateLimiter annotation) {
         final RateLimiterConfig.Builder config = RateLimiterConfig.custom();
 
         if (annotation.configProvider() != None.class) {
-            return instance(annotation.configProvider()).get();
+            return newInstance(annotation.configProvider(), context).get();
         }
 
         if (annotation.limitForPeriod() != -1) {
@@ -47,20 +53,5 @@ public class RateLimiterProcessor {
         }
 
         return config.build();
-    }
-
-    private <T> T instance(Class<T> instanceClass) {
-        try {
-            final Object result = context.computeIfAbsent(instanceClass, key -> {
-                try {
-                    return newInstance(instanceClass);
-                } catch (Exception e) {
-                    throw new IllegalArgumentException("TODO");
-                }
-            });
-            return (T) result;
-        } catch (ClassCastException e) {
-            throw new IllegalArgumentException("TODO");
-        }
     }
 }

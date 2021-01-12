@@ -1,6 +1,7 @@
 package io.github.resilience4j.proxy.fallback;
 
 import io.github.resilience4j.core.lang.Nullable;
+import io.github.resilience4j.proxy.ProxyDecorator;
 
 import java.lang.reflect.Method;
 import java.util.Map;
@@ -10,38 +11,32 @@ import java.util.concurrent.ConcurrentHashMap;
 import static io.github.resilience4j.proxy.util.AnnotationFinder.find;
 import static io.github.resilience4j.proxy.util.Reflect.newInstance;
 
+/**
+ * Processes {@link io.github.resilience4j.proxy.fallback.Fallback} annotations and returns
+ * a corresponding {@link io.github.resilience4j.proxy.ProxyDecorator}.
+ */
 public class FallbackProcessor {
 
-    private final Map<Class<?>, Object> fallbacks = new ConcurrentHashMap<>();
+    private final Map<Class<?>, Object> context = new ConcurrentHashMap<>();
 
     public FallbackProcessor(@Nullable Map<Class<?>, ?> instances) {
         if (instances != null) {
-            fallbacks.putAll(instances);
+            context.putAll(instances);
         }
     }
 
-    public Optional<Object> process(Method method) {
+    public Optional<ProxyDecorator> process(Method method) {
         final Fallback annotation = find(Fallback.class, method);
 
         if (annotation == null) {
             return Optional.empty();
         }
 
-        try {
-            return Optional.of(fetchFallback(annotation));
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Invalid Fallback!", e);
-        }
+        final Object fallback = buildConfig(annotation);
+        return Optional.of(new FallbackDecorator<>(new FallbackFactory<>(ex -> fallback)));
     }
 
-    private Object fetchFallback(Fallback annotation) {
-        return fallbacks.computeIfAbsent(annotation.fallback(), key -> {
-            try {
-                final Object newFallback = newInstance(annotation.fallback());
-                return newFallback;
-            } catch (Exception e) {
-                throw new IllegalArgumentException("TODO");
-            }
-        });
+    private Object buildConfig(Fallback annotation) {
+        return newInstance(annotation.fallback(), context);
     }
 }
