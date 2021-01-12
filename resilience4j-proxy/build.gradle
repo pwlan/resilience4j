@@ -4,4 +4,4 @@ dependencies {
     compile project(':resilience4j-ratelimiter')
     compile project(':resilience4j-bulkhead')
 }
-ext.moduleName = 'io.github.resilience4j.feign'
+ext.moduleName = 'io.github.resilience4j.proxy'
