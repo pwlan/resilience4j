@@ -37,7 +37,7 @@ public @interface CircuitBreaker {
     /**
      * @return the name of the circuit breaker.
      */
-    String name() default "";
+    String name() default "CircuitBreaker";
 
     /**
      * @return a supplier that provides the entire config. If this is set, then all other config values are ignored.
@@ -53,6 +53,11 @@ public @interface CircuitBreaker {
      * @return the waitDurationInOpenState.
      */
     long waitDurationInOpenState() default -1;
+
+    /**
+     * @return the failureRateThreshold.
+     */
+    float failureRateThreshold() default -1;
 
     /**
      * Indicates that there is no value specified.

@@ -38,7 +38,7 @@ public @interface Retry {
     /**
      * @return the name of the retry.
      */
-    String name() default "";;
+    String name() default "Retry";
 
     /**
      * @return a supplier that provides the entire config. If this is set, then all other config values are ignored.

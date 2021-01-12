@@ -23,7 +23,7 @@ import static java.lang.reflect.Proxy.newProxyInstance;
  *
  * Example Usage:
  * <code>
- * public interface MyService {
+ *         public interface MyService {
  *
  *             @Retry
  *             String getGreeting();

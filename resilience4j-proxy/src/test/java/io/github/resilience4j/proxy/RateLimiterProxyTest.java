@@ -81,7 +81,7 @@ public class RateLimiterProxyTest {
 }
 
 /**
- * Test Service with fallback.
+ * Test Service with RateLimiter.
  */
 interface RateLimiterTestService {
 

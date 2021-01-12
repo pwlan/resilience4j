@@ -37,7 +37,7 @@ public @interface RateLimiter {
     /**
      * @return the name of the rate limiter.
      */
-    String name() default "";;
+    String name() default "RateLimiter";
 
     int limitForPeriod() default -1;
 

@@ -17,19 +17,14 @@ package io.github.resilience4j.proxy.circuitbreaker;
 
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
-import io.github.resilience4j.core.lang.Nullable;
 import io.github.resilience4j.proxy.Context;
 import io.github.resilience4j.proxy.ProxyDecorator;
 import io.github.resilience4j.proxy.circuitbreaker.CircuitBreaker.None;
-import io.github.resilience4j.proxy.rateLimiter.RateLimiter;
 
 import java.lang.reflect.Method;
-import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 
 import static io.github.resilience4j.proxy.util.AnnotationFinder.find;
-import static io.github.resilience4j.proxy.util.Reflect.newInstance;
 import static java.time.Duration.ofMillis;
 
 /**
@@ -69,6 +64,9 @@ public class CircuitBreakerProcessor {
         }
         if (annotation.waitDurationInOpenState() != -1) {
             config.waitDurationInOpenState(ofMillis(annotation.waitDurationInOpenState()));
+        }
+        if (annotation.failureRateThreshold() != -1) {
+            config.failureRateThreshold(annotation.failureRateThreshold());
         }
 
         return config.build();

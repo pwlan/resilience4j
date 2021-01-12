@@ -113,7 +113,7 @@ public class RetryProxyTest {
 }
 
 /**
- * Test Service with fallback.
+ * Test Service with Retry.
  */
 @Retry(name = "retryTestService")
 interface RetryTestService {
