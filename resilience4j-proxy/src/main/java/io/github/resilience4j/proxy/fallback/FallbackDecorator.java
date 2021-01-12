@@ -39,20 +39,23 @@ public class FallbackDecorator implements ProxyDecorator {
             try {
                 final Object result = invocationCall.apply(args);
                 if (result instanceof CompletionStage) {
-                    return handleCompletionStage((CompletionStage<?>) result, method, args);
+                    return handleCompletionStage((CompletionStage<?>) result, invocationCall, method, args);
                 }
-                return fallbackHandler.handle(method, args, result, null);
+                return fallbackHandler.handle(invocationCall, method, args, result, null);
             } catch (Exception err) {
-                return fallbackHandler.handle(method, args, null, err);
+                return fallbackHandler.handle(invocationCall, method, args, null, err);
             }
         };
     }
 
-    private CompletableFuture<?> handleCompletionStage(CompletionStage<?> resultStage, Method method, Object[] args) {
+    private CompletableFuture<?> handleCompletionStage(CompletionStage<?> resultStage,
+                                                       CheckedFunction1<Object[], ?> invocationCall,
+                                                       Method method,
+                                                       Object[] args) {
         final CompletableFuture<Object> futureResult = new CompletableFuture<>();
         resultStage.whenComplete((result, err) -> {
             if (err != null) {
-                handleStageException(err, futureResult, method, args);
+                handleStageException(err, futureResult, invocationCall, method, args);
             } else {
                 futureResult.complete(result);
             }
@@ -62,6 +65,7 @@ public class FallbackDecorator implements ProxyDecorator {
 
     private void handleStageException(Throwable err,
                                       CompletableFuture<Object> futureResult,
+                                      CheckedFunction1<Object[], ?> invocationCall,
                                       Method method,
                                       Object[] args) {
         if (err != null && !(err instanceof Exception)) {
@@ -69,7 +73,7 @@ public class FallbackDecorator implements ProxyDecorator {
             return;
         }
         try {
-            final Object fallbackResult = fallbackHandler.handle(method, args, null, (Exception) err);
+            final Object fallbackResult = fallbackHandler.handle(invocationCall, method, args, null, (Exception) err);
             if (fallbackResult instanceof CompletionStage) {
                 combine((CompletionStage<?>) fallbackResult, futureResult);
             } else {

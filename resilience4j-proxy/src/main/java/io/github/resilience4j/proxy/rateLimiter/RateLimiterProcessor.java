@@ -1,6 +1,7 @@
 package io.github.resilience4j.proxy.rateLimiter;
 
 import io.github.resilience4j.core.lang.Nullable;
+import io.github.resilience4j.proxy.Context;
 import io.github.resilience4j.proxy.ProxyDecorator;
 import io.github.resilience4j.proxy.rateLimiter.RateLimiter.None;
 import io.github.resilience4j.ratelimiter.RateLimiter;
@@ -20,12 +21,10 @@ import static io.github.resilience4j.proxy.util.Reflect.newInstance;
  */
 public class RateLimiterProcessor {
 
-    private final Map<Class<?>, Object> context = new ConcurrentHashMap<>();
+    private final Context context;
 
-    public RateLimiterProcessor(@Nullable Map<Class<?>, Object> instances) {
-        if (instances != null) {
-            context.putAll(instances);
-        }
+    public RateLimiterProcessor(Context context) {
+        this.context = context;
     }
 
     public Optional<ProxyDecorator> process(Method method) {
@@ -45,7 +44,7 @@ public class RateLimiterProcessor {
         final RateLimiterConfig.Builder config = RateLimiterConfig.custom();
 
         if (annotation.configProvider() != None.class) {
-            return newInstance(annotation.configProvider(), context).get();
+            return context.lookup(annotation.configProvider()).get();
         }
 
         if (annotation.limitForPeriod() != -1) {

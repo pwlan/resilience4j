@@ -15,12 +15,31 @@
  */
 package io.github.resilience4j.proxy;
 
-import java.util.Map;
-
 import static java.lang.reflect.Proxy.newProxyInstance;
 
 /**
- * TODO
+ * Decorates methods of an object with resilience constructs.
+ * This is the main entrypoint of the framework.
+ *
+ * Example Usage:
+ * <code>
+ * public interface MyService {
+ *
+ *             @Retry
+ *             String getGreeting();
+ *         }
+ *
+ *         public interface MyServiceImpl implements MyService {
+ *
+ *             String getGreeting() {
+ *                // Make some call that may fail.
+ *             }
+ *         }
+ *
+ *        MyService service = new MyServiceImpl();
+ *        MyService decoratedService = Resilience4jProxy.build().apply(MyService.class, service);
+ *        decoratedService.getGreeting(); // MyServiceImpl.getGreeting() will be retried if an exception is thrown.
+ * </code>
  */
 public final class Resilience4jProxy {
 
@@ -41,10 +60,10 @@ public final class Resilience4jProxy {
     }
 
     public static Resilience4jProxy build() {
-        return build(new AnnotationDecorator());
+        return build(new AnnotationDecorator(new Context()));
     }
 
-    public static Resilience4jProxy build(Map<Class<?>, Object> context) {
+    public static Resilience4jProxy build(Context context) {
         return build(new AnnotationDecorator(context));
     }
 }

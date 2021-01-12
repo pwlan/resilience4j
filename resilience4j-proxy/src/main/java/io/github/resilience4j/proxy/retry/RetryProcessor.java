@@ -15,22 +15,18 @@
  */
 package io.github.resilience4j.proxy.retry;
 
-import io.github.resilience4j.core.lang.Nullable;
+import io.github.resilience4j.proxy.Context;
 import io.github.resilience4j.proxy.ProxyDecorator;
 import io.github.resilience4j.proxy.retry.Retry.None;
-import io.github.resilience4j.proxy.util.Reflect;
 import io.github.resilience4j.retry.Retry;
 import io.github.resilience4j.retry.RetryConfig;
 
 import java.lang.reflect.Method;
 import java.time.Duration;
-import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 
 import static io.github.resilience4j.proxy.retry.RetryExecutor.getExecutorService;
 import static io.github.resilience4j.proxy.util.AnnotationFinder.find;
-import static io.github.resilience4j.proxy.util.Reflect.newInstance;
 
 /**
  * Processes {@link io.github.resilience4j.proxy.retry.Retry} annotations and returns
@@ -38,12 +34,10 @@ import static io.github.resilience4j.proxy.util.Reflect.newInstance;
  */
 public class RetryProcessor {
 
-    private final Map<Class<?>, Object> context = new ConcurrentHashMap<>();
+    private final Context context;
 
-    public RetryProcessor(@Nullable Map<Class<?>, Object> instances) {
-        if (instances != null) {
-            context.putAll(instances);
-        }
+    public RetryProcessor(Context context) {
+        this.context = context;
     }
 
     public Optional<ProxyDecorator> process(Method method) {
@@ -63,7 +57,7 @@ public class RetryProcessor {
         final RetryConfig.Builder<?> config = RetryConfig.custom();
 
         if (annotation.configProvider() != None.class) {
-            return newInstance(annotation.configProvider(), context).get();
+            return context.lookup(annotation.configProvider()).get();
         }
 
         if (annotation.retryExceptions().length != 0) {
@@ -73,7 +67,7 @@ public class RetryProcessor {
             config.maxAttempts(annotation.maxAttempts());
         }
         if (annotation.retryOnException() != None.class) {
-            config.retryOnException(newInstance(annotation.retryOnException(), context));
+            config.retryOnException(context.lookup(annotation.retryOnException()));
         }
         if (annotation.waitDuration() != -1) {
             config.waitDuration(Duration.ofMillis(annotation.waitDuration()));

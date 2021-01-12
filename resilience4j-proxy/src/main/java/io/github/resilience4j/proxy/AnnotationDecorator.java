@@ -33,7 +33,7 @@ final class AnnotationDecorator implements ProxyDecorator {
     private final RetryProcessor retryProcessor;
     private final CircuitBreakerProcessor circuitBreakerProcessor;
 
-    public <T> AnnotationDecorator(@Nullable Map<Class<?>, Object> context) {
+    public <T> AnnotationDecorator(Context context) {
         // TODO validate instances
         fallbackProcessor = new FallbackProcessor(context);
         retryProcessor = new RetryProcessor(context);

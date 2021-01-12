@@ -4,8 +4,6 @@ import io.github.resilience4j.proxy.fallback.Fallback;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -50,8 +48,8 @@ public class FallbackProxyTest {
     public void testFallbackContext() {
         final FallbackTestServiceImpl fallback = new FallbackTestServiceImpl();
         fallback.result = UUID.randomUUID().toString();
-        final Map<Class<?>, Object> context = new HashMap<>();
-        context.put(FallbackTestService.class, fallback);
+        final Context context = new Context();
+        context.add(FallbackTestService.class, fallback);
 
         decoratedTestService = Resilience4jProxy.build(context).apply(FallbackTestService.class, testService);
         final String result = decoratedTestService.fallbackProvided();
@@ -78,28 +76,36 @@ interface FallbackTestService {
 
     String fallback();
 
-    @Fallback(name = "fallbackByMethodAnnotation", fallback = Fallback2TestServiceImpl.class)
+    @Fallback(fallback = Fallback2TestServiceImpl.class)
     String fallbackByMethodAnnotation();
 
-    @Fallback(name = "fallbackProvided", fallback = FallbackTestService.class)
+    @Fallback(fallback = FallbackTestService.class)
     String fallbackProvided();
 }
 
 /**
  * Test Service that implements fallback.
  */
-class FallbackTestServiceImpl {
+class FallbackTestServiceImpl implements FallbackTestService {
 
     public String result = "fallback";
 
+    @Override
     public CompletableFuture<String> asyncFallback() {
         return completedFuture(result);
     }
 
+    @Override
     public String fallback() {
         return result;
     }
 
+    @Override
+    public String fallbackByMethodAnnotation() {
+        return "error";
+    }
+
+    @Override
     public String fallbackProvided() {
         return result;
     }

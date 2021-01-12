@@ -1,20 +1,22 @@
 = resilience4j-proxy
 
 Resilience4j Proxy uses https://docs.oracle.com/javase/8/docs/technotes/guides/reflection/proxy.html[Java Dynamic Proxies]
-to apply resilience constructs declaratively to any object using annotations.
-
+to apply resilience constructs declaratively using annotations.
+Unlike other AOP (Aspect-Oriented Programming) technologies, Java Dynamic Proxies are limited to java interfaces.
+Therefore, all Resilience4jProxy annotations can only be declared on interfaces and not directly on the classes.
+This makes the library especially interesting for other interface-based technologies,
+such as https://github.com/OpenFeign/feign[OpenFeign] and https://square.github.io/retrofit[Retrofit].
 
 == Current Features
 * CircuitBreaker
+* Retry
 * RateLimiter
 * Fallback
  
  
-== Decorating Interfaces
+== Basic Usage
 
-The `Resilience4jProxy` is the main class for adding resilience to objects.
-Resilience4jProxy annotations can only be declared on interfaces.
-This is illustrated in the following example:
+The `Resilience4jProxy` is the main entrypoint for the framework.
 
 ``` java
         public interface MyService {
@@ -42,84 +44,56 @@ Calls to `service.getGreeting()` are unaffected.
 
 
 == Ordering of Decorators
-The order in which decorators are applied correspond to the order in which they are declared. 
-When building `FeignDecorators`, it is important to be wary of this, since the order affects the resulting behavior.
 
-For example,
-``` java
-        FeignDecorators decoratorsA = FeignDecorators.builder()
-                                         .withCircuitBreaker(circuitBreaker)
-                                         .withRateLimiter(rateLimiter)
-                                         .build();
-                                         
-        FeignDecorators decoratorsB = FeignDecorators.builder()
-                                         .withRateLimiter(rateLimiter)
-                                         .withCircuitBreaker(circuitBreaker)
-                                         .build();
-```        
+In the case that multiple `Resilience4jProxy` annotations are applied to a service,
+the following execution order is applied.
 
-With `decoratorsA` the RateLimiter will be called before the CircuitBreaker. That means that even if the CircuitBreaker is open, the RateLimiter will still limit the rate of calls.
-`decoratorsB` applies the reserve order. Meaning that once the CircuitBreaker is open, the RateLimiter will no longer be in affect.
+* First `Retry`
+* then `RateLimiter`
+* then `CircuitBreaker`
+* and when all else fails `Fallback`
 
 
-== Fallback
-Fallbacks can be defined that are called when Exceptions are thrown. Exceptions can occur when the HTTP request fails, but also when one of the `FeignDecorators` activates, for example, the CircuitBreaker.
+== Resilience4jProxy Context
+
+Throughout the Resilience4jProxy annotations, classes can be specified that provide some sort of functionality.
+The default behaviour is to simply instantiate these classes using no-arg constructors.
+However, pre-instantiated classes can also be passed to the framework that are used instead.
+This is illustrated in the following example:
 
 ``` java
         public interface MyService {
-            @RequestLine("GET /greeting")
-            String greeting();
+
+            @Fallback(fallback = MyService.class)
+            String getGreeting();
         }
 
-        MyService requestFailedFallback = () -> "fallback greeting";
-        MyService circuitBreakerFallback = () -> "CircuitBreaker is open!";
-        CircuitBreaker circuitBreaker = CircuitBreaker.ofDefaults("backendName");
-        FeignDecorators decorators = FeignDecorators.builder()
-                                         .withFallback(requestFailedFallback, FeignException.class)
-                                         .withFallback(circuitBreakerFallback, CallNotPermittedException.class)
-                                         .build();
-        MyService myService = Resilience4jFeign.builder(decorators).target(MyService.class, "http://localhost:8080/", fallback);
-```
-In this example, the `requestFailedFallback` is called when a `FeignException` is thrown (usually when the HTTP request fails), whereas
- the `circuitBreakerFallback` is only called in the case of a `CallNotPermittedException`.
- Check the `FeignDecorators` class for more ways to filter fallbacks.
+        public interface MyServiceImpl implements MyService {
 
-All fallbacks must implement the same interface that is declared in the "target" (Resilience4jFeign.Builder#target) method, otherwise an IllegalArgumentException will be thrown.
-Multiple fallbacks can be assigned to handle the same Exception with the next fallback being called when the previous one fails.
-
-A fallback can consume a thrown Exception if needed. This can be useful if the fallback may have different behaviours depending on the Exception, or to simply log the Exception.
-Be aware that such a fallback will be instantiated for every exceptions thrown.
-
-``` java
-        public interface MyService {
-            @RequestLine("GET /greeting")
-            String greeting();
-        }
-
-        public class MyFallback implements MyService {
-            private Exception cause;
-
-            public MyFallback(Exception cause) {
-                this.cause = cause;
-            }
-
-            public String greeting() {
-                if (cause instanceOf FeignException) {
-                    return "Feign Exception";
-                } else {
-                    return "Other exception";
-                }
+            String getGreeting() {
+               // Make some call that may fail.
             }
         }
 
-        FeignDecorators decorators = FeignDecorators.builder()
-                                         .withFallbackFactory(MyFallback::new)
-                                         .build();
+       public interface FallbackServiceImpl implements MyService {
+
+            String getGreeting() {
+              return "fallback";
+            }
+        }
+
+       FallbackServiceImpl fallback = new FallbackServiceImpl();
+       Map<Class<?>, Object> context = new HashMap<>();
+       context.put(MyService.class, fallback);
+
+       MyService service = new MyServiceImpl();
+       MyService decoratedService = Resilience4jProxy.build(context).apply(MyService.class, service); // add conext here
+
 ```
 
-== License
+In this example, whenever a class is defined in an annotation, the framework will use the context to lookup an instance.
+If no instance can be found, then a new instance is created.
 
-Copyright 2021
 
 Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at
 

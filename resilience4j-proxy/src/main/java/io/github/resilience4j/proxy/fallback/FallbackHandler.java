@@ -16,6 +16,7 @@
 package io.github.resilience4j.proxy.fallback;
 
 import io.github.resilience4j.core.lang.Nullable;
+import io.vavr.CheckedFunction1;
 
 import java.lang.reflect.Method;
 
@@ -27,13 +28,19 @@ import java.lang.reflect.Method;
 interface FallbackHandler {
 
     /**
-     *  Decides if a fallback is required and if so performs the fallback.
+     * Decides if a fallback is required and if so performs the fallback.
      *
-     * @param method the method that was executed.
-     * @param args the args passed to the method.
-     * @param result the result returned by the method.
-     * @param error the error thrown by the method.
+     * @param invocationCall the function that was executed.
+     *                       Implementations of the {@link FallbackHandler} may invoke this again.
+     * @param method         the method that has been decorated. This should not be executed by the {@link FallbackHandler}.
+     * @param args           the args passed to the method.
+     * @param result         the result returned by the method.
+     * @param error          the error thrown by the method.
      */
-    Object handle(Method method, Object[] args, @Nullable Object result, @Nullable Exception error) throws Exception;
+    Object handle(CheckedFunction1<Object[], ?> invocationCall,
+                  Method method,
+                  Object[] args,
+                  @Nullable Object result,
+                  @Nullable Exception error) throws Exception;
 
 }

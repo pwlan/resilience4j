@@ -1,8 +1,6 @@
 package io.github.resilience4j.proxy;
 
 import io.github.resilience4j.proxy.retry.Retry;
-import io.github.resilience4j.ratelimiter.RateLimiter;
-import io.github.resilience4j.ratelimiter.RateLimiterConfig;
 import io.github.resilience4j.retry.RetryConfig;
 import org.junit.Before;
 import org.junit.Test;
@@ -16,7 +14,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static io.github.resilience4j.proxy.test.TestHelper.*;
+import static io.github.resilience4j.proxy.test.TestHelper.callWithException;
+import static io.github.resilience4j.proxy.test.TestHelper.failedFuture;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
@@ -127,15 +126,15 @@ interface RetryTestService {
 
     CompletableFuture<String> asyncRetryDefault();
 
-    @Retry(name = "retry4Attempts", maxAttempts = 4)
+    @Retry(maxAttempts = 4)
     String retry4Attempts();
 
-    @Retry(name = "retry4Attempts", maxAttempts = 4)
+    @Retry(maxAttempts = 4)
     CompletableFuture<String> asyncRetry4Attempts();
 
     @Retry(name = "retryRecovery", maxAttempts = 5)
     String retryRecovery();
 
-    @Retry(name = "retryRecovery", maxAttempts = 5)
+    @Retry(maxAttempts = 5)
     CompletableFuture<String> asyncRetryRecovery();
 }

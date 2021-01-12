@@ -16,6 +16,7 @@
 package io.github.resilience4j.proxy.fallback;
 
 import io.github.resilience4j.core.lang.Nullable;
+import io.github.resilience4j.proxy.Context;
 import io.github.resilience4j.proxy.ProxyDecorator;
 
 import java.lang.reflect.Method;
@@ -32,12 +33,10 @@ import static io.github.resilience4j.proxy.util.Reflect.newInstance;
  */
 public class FallbackProcessor {
 
-    private final Map<Class<?>, Object> context = new ConcurrentHashMap<>();
+    private final Context context;
 
-    public FallbackProcessor(@Nullable Map<Class<?>, Object> instances) {
-        if (instances != null) {
-            context.putAll(instances);
-        }
+    public FallbackProcessor(Context context) {
+       this.context = context;
     }
 
     public Optional<ProxyDecorator> process(Method method) {
@@ -52,7 +51,7 @@ public class FallbackProcessor {
     }
 
     private FallbackHandler buildConfig(Fallback annotation) {
-        final Object fallback = newInstance(annotation.fallback(), context);
+        final Object fallback = context.lookup(annotation.fallback());
 
         if (fallback instanceof FallbackHandler) {
             return (FallbackHandler) fallback;

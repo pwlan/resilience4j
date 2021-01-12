@@ -37,7 +37,7 @@ public @interface CircuitBreaker {
     /**
      * @return the name of the circuit breaker.
      */
-    String name();
+    String name() default "";
 
     /**
      * @return a supplier that provides the entire config. If this is set, then all other config values are ignored.

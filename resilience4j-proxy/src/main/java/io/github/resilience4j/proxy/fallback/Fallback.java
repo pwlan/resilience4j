@@ -30,7 +30,7 @@ public @interface Fallback {
     /**
      * @return the name of the fallback.
      */
-    String name();
+    String name() default "";
 
     /**
      * @return the fallback. The fallback is either an implementation of {@link FallbackHandler}

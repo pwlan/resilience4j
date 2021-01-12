@@ -16,6 +16,7 @@
 package io.github.resilience4j.proxy.fallback;
 
 import io.github.resilience4j.core.lang.Nullable;
+import io.vavr.CheckedFunction1;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -37,7 +38,8 @@ class DefaultFallbackHandler implements FallbackHandler {
     }
 
     @Override
-    public Object handle(Method method,
+    public Object handle(CheckedFunction1<Object[], ?> invocationCall,
+                         Method method,
                          Object[] args,
                          @Nullable Object result,
                          @Nullable Exception error) throws Exception {

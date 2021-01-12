@@ -20,14 +20,14 @@ import io.vavr.CheckedFunction1;
 import java.lang.reflect.Method;
 
 /**
- * Used to decorate methods defined by feign interfaces. Decorators can be stacked, allowing
- * multiple Decorators to be combined. See {@link ProxyDecorators}.
+ * Used to decorate methods with resilience4j constructs. Decorators can be stacked, allowing
+ * multiple Decorators to be combined.
  */
 @FunctionalInterface
 public interface ProxyDecorator {
 
     /**
-     * Decorates the invocation of a method defined by a feign interface.
+     * Decorates the invocation of a method.
      *
      * @param invocationCall represents the call to the method. This should be decorated by the
      *                       implementing class.

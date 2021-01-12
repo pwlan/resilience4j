@@ -18,6 +18,7 @@ package io.github.resilience4j.proxy.circuitbreaker;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
 import io.github.resilience4j.core.lang.Nullable;
+import io.github.resilience4j.proxy.Context;
 import io.github.resilience4j.proxy.ProxyDecorator;
 import io.github.resilience4j.proxy.circuitbreaker.CircuitBreaker.None;
 import io.github.resilience4j.proxy.rateLimiter.RateLimiter;
@@ -37,12 +38,10 @@ import static java.time.Duration.ofMillis;
  */
 public class CircuitBreakerProcessor {
 
-    private final Map<Class<?>, Object> context = new ConcurrentHashMap<>();
+    private final Context context;
 
-    public CircuitBreakerProcessor(@Nullable Map<Class<?>, Object> instances) {
-        if (instances != null) {
-            context.putAll(instances);
-        }
+    public CircuitBreakerProcessor(Context context) {
+        this.context = context;
     }
 
     public Optional<ProxyDecorator> process(Method method) {
@@ -62,7 +61,7 @@ public class CircuitBreakerProcessor {
         final CircuitBreakerConfig.Builder config = CircuitBreakerConfig.custom();
 
         if (annotation.configProvider() != None.class) {
-            return newInstance(annotation.configProvider(), context).get();
+            return context.lookup(annotation.configProvider()).get();
         }
 
         if (annotation.slidingWindowSize() != -1) {
