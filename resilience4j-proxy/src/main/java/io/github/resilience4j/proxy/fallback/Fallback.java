@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Mahmoud Romeh
+ * Copyright 2021
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,12 +28,13 @@ import java.lang.annotation.*;
 public @interface Fallback {
 
     /**
-     * @return the name of the retry.
+     * @return the name of the fallback.
      */
     String name();
 
     /**
-     * @return the class of the retry.
+     * @return the fallback. The fallback is either an implementation of {@link FallbackHandler}
+     * or a class that provides methods with thew exact signature of the method for which it provides a fallback.
      */
     Class<?> fallback();
 }

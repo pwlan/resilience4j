@@ -22,7 +22,7 @@ public class RateLimiterProcessor {
 
     private final Map<Class<?>, Object> context = new ConcurrentHashMap<>();
 
-    public RateLimiterProcessor(@Nullable Map<Class<?>, ?> instances) {
+    public RateLimiterProcessor(@Nullable Map<Class<?>, Object> instances) {
         if (instances != null) {
             context.putAll(instances);
         }

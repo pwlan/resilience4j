@@ -40,7 +40,7 @@ public class RetryProcessor {
 
     private final Map<Class<?>, Object> context = new ConcurrentHashMap<>();
 
-    public RetryProcessor(@Nullable Map<Class<?>, ?> instances) {
+    public RetryProcessor(@Nullable Map<Class<?>, Object> instances) {
         if (instances != null) {
             context.putAll(instances);
         }

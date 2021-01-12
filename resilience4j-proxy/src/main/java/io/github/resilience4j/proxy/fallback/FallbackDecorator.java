@@ -1,18 +1,17 @@
 /*
+ * Copyright 2021
  *
- * Copyright 2019
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
- * in compliance with the License. You may obtain a copy of the License at
+ *        http://www.apache.org/licenses/LICENSE-2.0
  *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software distributed under the License
- * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
- * or implied. See the License for the specific language governing permissions and limitations under
- * the License.
- *
- *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package io.github.resilience4j.proxy.fallback;
 
@@ -20,51 +19,74 @@ import io.github.resilience4j.proxy.ProxyDecorator;
 import io.vavr.CheckedFunction1;
 
 import java.lang.reflect.Method;
-import java.util.function.Predicate;
-
-import static java.util.Objects.requireNonNull;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 /**
- * Decorator that calls a fallback in the case that an exception is thrown.
+ * Implementation of {@link ProxyDecorator} that decorates functions with a Fallback.
  */
- public class FallbackDecorator<T> implements ProxyDecorator {
+public class FallbackDecorator implements ProxyDecorator {
 
-    private final FallbackFactory<T> fallback;
-    private final Predicate<Exception> filter;
+    private final FallbackHandler fallbackHandler;
 
-    /**
-     * Creates a fallback that will be called for every {@link Exception}.
-     */
-    public FallbackDecorator(FallbackFactory<T> fallback) {
-        this(fallback, ex -> true);
+    public FallbackDecorator(FallbackHandler fallbackHandler) {
+        this.fallbackHandler = fallbackHandler;
     }
 
-    /**
-     * Creates a fallback that will only be called for the specified {@link Exception}.
-     */
-    public FallbackDecorator(FallbackFactory<T> fallback, Class<? extends Exception> filter) {
-        this(fallback, filter::isInstance);
-        requireNonNull(filter, "Filter cannot be null!");
-    }
-
-    /**
-     * Creates a fallback that will only be called if the specified {@link Predicate} returns
-     * <code>true</code>.
-     */
-    public FallbackDecorator(FallbackFactory<T> fallback, Predicate<Exception> filter) {
-        this.fallback = requireNonNull(fallback, "Fallback cannot be null!");
-        this.filter = requireNonNull(filter, "Filter cannot be null!");
-    }
-
-    /**
-     * Calls the fallback if the invocationCall throws an {@link Exception}.
-     *
-     * @throws IllegalArgumentException if the fallback object does not have a corresponding
-     *                                  fallback method.
-     */
     @Override
-    public CheckedFunction1<Object[], ?> decorate(CheckedFunction1<Object[], ?> invocationCall,
-                                                  Method method) {
-        return fallback.decorate(invocationCall, method, filter);
+    public CheckedFunction1<Object[], ?> decorate(CheckedFunction1<Object[], ?> invocationCall, Method method) {
+        return args -> {
+            try {
+                final Object result = invocationCall.apply(args);
+                if (result instanceof CompletionStage) {
+                    return handleCompletionStage((CompletionStage<?>) result, method, args);
+                }
+                return fallbackHandler.handle(method, args, result, null);
+            } catch (Exception err) {
+                return fallbackHandler.handle(method, args, null, err);
+            }
+        };
+    }
+
+    private CompletableFuture<?> handleCompletionStage(CompletionStage<?> resultStage, Method method, Object[] args) {
+        final CompletableFuture<Object> futureResult = new CompletableFuture<>();
+        resultStage.whenComplete((result, err) -> {
+            if (err != null) {
+                handleStageException(err, futureResult, method, args);
+            } else {
+                futureResult.complete(result);
+            }
+        });
+        return futureResult;
+    }
+
+    private void handleStageException(Throwable err,
+                                      CompletableFuture<Object> futureResult,
+                                      Method method,
+                                      Object[] args) {
+        if (err != null && !(err instanceof Exception)) {
+            futureResult.completeExceptionally(err);
+            return;
+        }
+        try {
+            final Object fallbackResult = fallbackHandler.handle(method, args, null, (Exception) err);
+            if (fallbackResult instanceof CompletionStage) {
+                combine((CompletionStage<?>) fallbackResult, futureResult);
+            } else {
+                futureResult.complete(fallbackResult);
+            }
+        } catch (Throwable ex) {
+            futureResult.completeExceptionally(ex);
+        }
+    }
+
+    private void combine(CompletionStage<?> fromStage, CompletableFuture<Object> toFuture) {
+        fromStage.whenComplete((result, err) -> {
+            if (err != null) {
+                toFuture.completeExceptionally(err);
+            } else {
+                toFuture.complete(result);
+            }
+        });
     }
 }
