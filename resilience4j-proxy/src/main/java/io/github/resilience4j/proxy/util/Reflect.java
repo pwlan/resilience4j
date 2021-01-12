@@ -27,9 +27,9 @@ public final class Reflect {
     }
 
     public static <T> T newInstance(Class<T> instanceClass) throws NoSuchMethodException,
-                                                                   IllegalAccessException,
-                                                                   InvocationTargetException,
-                                                                   InstantiationException {
+        IllegalAccessException,
+        InvocationTargetException,
+        InstantiationException {
         final Constructor<T> constructor = instanceClass.getDeclaredConstructor();
         constructor.setAccessible(true);
         return constructor.newInstance();
@@ -41,40 +41,31 @@ public final class Reflect {
                 try {
                     return newInstance(instanceClass);
                 } catch (Exception e) {
-                    throw new IllegalArgumentException("TODO");
+                    throw new IllegalArgumentException(e);
                 }
             });
             return (T) result;
         } catch (ClassCastException e) {
-            throw new IllegalArgumentException("TODO");
+            throw new IllegalArgumentException(e);
         }
     }
 
     public static Method findMatchingMethod(Object instance, Method method) {
-        final Method fallbackMethod;
+        final Method result;
         try {
-            fallbackMethod = instance.getClass().getMethod(method.getName(), method.getParameterTypes());
-            if (fallbackMethod.getReturnType() != method.getReturnType()) {
-                throw new IllegalArgumentException("Cannot use the fallback ["
-                                                   + instance.getClass() + "] for ["
-                                                   + method.getDeclaringClass() + "]");
+            result = instance.getClass().getMethod(method.getName(), method.getParameterTypes());
+            if (result.getReturnType() != method.getReturnType()) {
+                throw new IllegalArgumentException("Cannot find a method matching ["
+                    + method + "] in ["
+                    + instance + "]");
             }
         } catch (NoSuchMethodException | SecurityException e) {
-            throw new IllegalArgumentException("Cannot use the fallback ["
-                                               + instance.getClass() + "] for ["
-                                               + method.getDeclaringClass() + "]", e);
+            throw new IllegalArgumentException("Cannot find a method matching ["
+                + method + "] in ["
+                + instance + "]");
         }
-        fallbackMethod.setAccessible(true);
-        return fallbackMethod;
-    }
-
-    private static void validateFallback(Object fallbackInstance, Method method) {
-        // TODO this is broken
-        if (fallbackInstance.getClass().isAssignableFrom(method.getDeclaringClass())) {
-            throw new IllegalArgumentException("Cannot use the fallback ["
-                                               + fallbackInstance.getClass() + "] for ["
-                                               + method.getDeclaringClass() + "]!");
-        }
+        result.setAccessible(true);
+        return result;
     }
 
     public static boolean isAsync(Method method) {

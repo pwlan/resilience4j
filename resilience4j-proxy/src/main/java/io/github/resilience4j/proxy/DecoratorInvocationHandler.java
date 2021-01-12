@@ -26,7 +26,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import static java.lang.reflect.Proxy.getInvocationHandler;
 import static java.lang.reflect.Proxy.isProxyClass;
 
-final class DecoratorInvocationHandler<T> implements InvocationHandler {
+/**
+ * An instance of {@link InvocationHandler} that uses {@link ProxyDecorator}s to enhance the
+ * invocations of methods.
+ */
+class DecoratorInvocationHandler<T> implements InvocationHandler {
 
     private final Class<T> type;
     private final T instance;
@@ -41,15 +45,6 @@ final class DecoratorInvocationHandler<T> implements InvocationHandler {
 
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-        // switch (method.getName()) {
-        //     case "equals":
-        //      if (method.getParameterCount() == 1) return equals(args.length > 0 ? args[0] : null);
-        //     case "hashCode":
-        //      if (method.getParameterCount() == 0) return hashCode();
-        //   case "toString":
-        //       if (method.getParameterCount() == 0) return toString();
-        // }
-
         return callDecoratedMethod(method, args);
     }
 

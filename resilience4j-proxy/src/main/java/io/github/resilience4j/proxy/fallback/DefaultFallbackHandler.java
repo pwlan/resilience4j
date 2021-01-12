@@ -50,8 +50,8 @@ class DefaultFallbackHandler implements FallbackHandler {
     }
 
     private Object executeFallback(Method method, Object[] args) throws Exception {
-        final Method fallbackMethod = findMatchingMethod(fallback, method);
         try {
+            final Method fallbackMethod = findMatchingMethod(fallback, method);
             return fallbackMethod.invoke(fallback, args);
         } catch (InvocationTargetException ex) {
             final Throwable ite = ex.getCause();
@@ -60,6 +60,9 @@ class DefaultFallbackHandler implements FallbackHandler {
             } else {
                 throw new RuntimeException(ite);
             }
+        } catch (IllegalArgumentException ex) {
+            throw new IllegalArgumentException("The fallback [" +
+                fallback + "] does not define a method matching [" + method + "] ", ex);
         }
     }
 }

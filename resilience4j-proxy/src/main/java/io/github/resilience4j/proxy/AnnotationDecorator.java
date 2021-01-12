@@ -15,7 +15,6 @@
  */
 package io.github.resilience4j.proxy;
 
-import io.github.resilience4j.core.lang.Nullable;
 import io.github.resilience4j.proxy.circuitbreaker.CircuitBreakerProcessor;
 import io.github.resilience4j.proxy.fallback.FallbackProcessor;
 import io.github.resilience4j.proxy.rateLimiter.RateLimiterProcessor;
@@ -23,26 +22,23 @@ import io.github.resilience4j.proxy.retry.RetryProcessor;
 import io.vavr.CheckedFunction1;
 
 import java.lang.reflect.Method;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
-final class AnnotationDecorator implements ProxyDecorator {
+/**
+ * Processes all Resilience4jProxy annotations and decorates functions accordingly.
+ */
+class AnnotationDecorator implements ProxyDecorator {
 
     private final RateLimiterProcessor rateLimiterProcessor;
     private final FallbackProcessor fallbackProcessor;
     private final RetryProcessor retryProcessor;
     private final CircuitBreakerProcessor circuitBreakerProcessor;
 
-    public <T> AnnotationDecorator(Context context) {
-        // TODO validate instances
+    AnnotationDecorator(Context context) {
         fallbackProcessor = new FallbackProcessor(context);
         retryProcessor = new RetryProcessor(context);
         rateLimiterProcessor = new RateLimiterProcessor(context);
         circuitBreakerProcessor = new CircuitBreakerProcessor(context);
-    }
-
-    public AnnotationDecorator() {
-        this(null);
     }
 
     @Override
