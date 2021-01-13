@@ -21,6 +21,8 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static java.lang.reflect.Proxy.getInvocationHandler;
@@ -54,9 +56,6 @@ class DecoratorInvocationHandler<T> implements InvocationHandler {
 
     private CheckedFunction1<Object[], ?> decorateMethod(Method method) {
         final CheckedFunction1<Object[], ?> methodAsFunction = asFunction(method);
-        if (!isDeclaredByType(method)) {
-            return methodAsFunction;
-        }
         method.setAccessible(true);
         return invocationDecorator.decorate(methodAsFunction, method);
     }
@@ -69,15 +68,6 @@ class DecoratorInvocationHandler<T> implements InvocationHandler {
                 throw e.getCause();
             }
         };
-    }
-
-    private boolean isDeclaredByType(Method method) {
-        for (Method declaredMethod : type.getDeclaredMethods()) {
-            if (declaredMethod.equals(method)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     @SuppressWarnings("unchecked")

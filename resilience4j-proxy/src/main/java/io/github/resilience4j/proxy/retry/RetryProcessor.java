@@ -15,17 +15,13 @@
  */
 package io.github.resilience4j.proxy.retry;
 
-import io.github.resilience4j.proxy.Context;
+import io.github.resilience4j.proxy.ProxyContext;
 import io.github.resilience4j.proxy.ProxyDecorator;
-import io.github.resilience4j.proxy.retry.Retry.None;
 import io.github.resilience4j.retry.Retry;
-import io.github.resilience4j.retry.RetryConfig;
 
 import java.lang.reflect.Method;
-import java.time.Duration;
 import java.util.Optional;
 
-import static io.github.resilience4j.proxy.retry.RetryExecutor.getExecutorService;
 import static io.github.resilience4j.proxy.util.AnnotationFinder.find;
 
 /**
@@ -34,9 +30,9 @@ import static io.github.resilience4j.proxy.util.AnnotationFinder.find;
  */
 public class RetryProcessor {
 
-    private final Context context;
+    private final ProxyContext context;
 
-    public RetryProcessor(Context context) {
+    public RetryProcessor(ProxyContext context) {
         this.context = context;
     }
 
@@ -48,31 +44,11 @@ public class RetryProcessor {
             return Optional.empty();
         }
 
-        final RetryConfig config = buildConfig(annotation);
-        final Retry retry = Retry.of(annotation.name(), config);
-        return Optional.of(new RetryDecorator(retry, getExecutorService()));
+        final Retry retry = buildRetry(annotation);
+        return Optional.of(new RetryDecorator(retry, context.getScheduledExecutorService()));
     }
 
-    private RetryConfig buildConfig(io.github.resilience4j.proxy.retry.Retry annotation) {
-        final RetryConfig.Builder<?> config = RetryConfig.custom();
-
-        if (annotation.configProvider() != None.class) {
-            return context.lookup(annotation.configProvider()).get();
-        }
-
-        if (annotation.retryExceptions().length != 0) {
-            config.retryExceptions(annotation.retryExceptions());
-        }
-        if (annotation.maxAttempts() != -1) {
-            config.maxAttempts(annotation.maxAttempts());
-        }
-        if (annotation.retryOnException() != None.class) {
-            config.retryOnException(context.lookup(annotation.retryOnException()));
-        }
-        if (annotation.waitDuration() != -1) {
-            config.waitDuration(Duration.ofMillis(annotation.waitDuration()));
-        }
-
-        return config.build();
+    private Retry buildRetry(io.github.resilience4j.proxy.retry.Retry annotation) {
+        return context.getRetryRegistry().retry(annotation.name());
     }
 }

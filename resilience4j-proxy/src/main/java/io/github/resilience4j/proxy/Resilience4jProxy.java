@@ -25,7 +25,7 @@ import static java.lang.reflect.Proxy.newProxyInstance;
  * <code>
  *         public interface MyService {
  *
- *             @Retry
+ *             @Retry(name = "getGreeting")
  *             String getGreeting();
  *         }
  *
@@ -60,10 +60,10 @@ public final class Resilience4jProxy {
     }
 
     public static Resilience4jProxy build() {
-        return build(new AnnotationDecorator(new Context()));
+        return build(new AnnotationDecorator(new ProxyContext()));
     }
 
-    public static Resilience4jProxy build(Context context) {
+    public static Resilience4jProxy build(ProxyContext context) {
         return build(new AnnotationDecorator(context));
     }
 }

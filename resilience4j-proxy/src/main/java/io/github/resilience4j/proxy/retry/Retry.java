@@ -38,37 +38,6 @@ public @interface Retry {
     /**
      * @return the name of the retry.
      */
-    String name() default "Retry";
-
-    /**
-     * @return a supplier that provides the entire config. If this is set, then all other config values are ignored.
-     */
-    Class<? extends Supplier<RetryConfig>> configProvider() default None.class;
-
-    /**
-     * @return the number of retries to perform.
-     */
-    int maxAttempts() default -1;
-
-    /**
-     * @return the duration in milliseconds to wait between retries.
-     */
-    long waitDuration() default -1;
-
-    /**
-     * @return the Exceptions that trigger a retry.
-     */
-    Class<? extends Throwable>[] retryExceptions() default {};
-
-    /**
-     * @return a predicate that decides if a retry is triggered.
-     */
-    Class<? extends Predicate<Throwable>> retryOnException() default None.class;
-
-    /**
-     * Indicates there is no value specified.
-     */
-    abstract class None implements Predicate<Throwable>, Supplier<RetryConfig> {
-    }
+    String name();
 }
 

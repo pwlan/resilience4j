@@ -15,10 +15,9 @@
  */
 package io.github.resilience4j.proxy.rateLimiter;
 
-import io.github.resilience4j.ratelimiter.RateLimiterConfig;
-
-import java.lang.annotation.*;
-import java.util.function.Supplier;
+import java.lang.annotation.Documented;
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
 
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.ElementType.TYPE;
@@ -38,17 +37,4 @@ public @interface RateLimiter {
      * @return the name of the rate limiter.
      */
     String name() default "RateLimiter";
-
-    int limitForPeriod() default -1;
-
-    /**
-     * @return a supplier that provides the entire config. If this is set, then all other config values are ignored.
-     */
-    Class<? extends Supplier<RateLimiterConfig>> configProvider() default None.class;
-
-    /**
-     * Indicates that there is no value specified.
-     */
-    abstract class None implements Supplier<RateLimiterConfig> {
-    }
 }

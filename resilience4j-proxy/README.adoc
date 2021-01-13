@@ -21,7 +21,7 @@ The `Resilience4jProxy` is the main entrypoint for the framework.
 ``` java
         public interface MyService {
 
-            @Retry
+            @Retry(name = "getGreetingRetry")
             String getGreeting();
         }
 
@@ -41,24 +41,37 @@ This example is equivalent to decorating `service.getGreeting();` with a `Retry`
 i.e. `Retry.decorateCheckedFunction(retry, (args) -> myServiceImpl.getGreeting());`
 It is important to note that only calls to `decoratedService.getGreeting()` can trigger a retry.
 Calls to `service.getGreeting()` are unaffected.
+In the example, the Retry uses the default config. To provide a custom Retry, please read the Chapter
+"Configuring Resilience4j".
 
 
-== Ordering of Decorators
+== Configuring Resilience4j
 
-In the case that multiple `Resilience4jProxy` annotations are applied to a service,
-the following execution order is applied.
+Resilience4j Proxy uses Resilience4j Registries to lookup configuration.
+The following example shows how to provide a `RetryRegistry` that contains a custom configuration
+for the "getGreetingRetry" Retry:
+``` java
+        public interface MyService {
 
-* First `Retry`
-* then `RateLimiter`
-* then `CircuitBreaker`
-* and when all else fails `Fallback`
+            @Retry(name = "getGreetingRetry")
+            String getGreeting();
+        }
+
+        RetryRegistry retryRegistry = RetryRegistry.ofDefaults();
+        retryRegistry.retry("getGreetingRetry", RetryConfig.custom().maxAttempts(4).build());
+
+        ProxyContext context = new ProxyContext();
+        context.setRetryRegistry(retryRegistry);
+
+        Resilience4jProxy resilience4jProxy = Resilience4jProxy.build(context);
+```
 
 
-== Resilience4jProxy Context
+== Configuring Fallbacks
 
-Throughout the Resilience4jProxy annotations, classes can be specified that provide some sort of functionality.
-The default behaviour is to simply instantiate these classes using no-arg constructors.
-However, pre-instantiated classes can also be passed to the framework that are used instead.
+Unlike other Resilience4j constructs, configuring fallbacks does not use a registry.
+The default behaviour is to simply instantiate the class defined in the `@Fallback` annotation using a no-arg constructor.
+However, pre-instantiated classes can also be passed to the framework that are then used instead.
 This is illustrated in the following example:
 
 ``` java
@@ -83,8 +96,8 @@ This is illustrated in the following example:
         }
 
        FallbackServiceImpl fallback = new FallbackServiceImpl();
-       Map<Class<?>, Object> context = new HashMap<>();
-       context.put(MyService.class, fallback);
+       ProxyContext context = new ProxyContext();
+       context.addFallback(MyService.class, fallback);
 
        MyService service = new MyServiceImpl();
        MyService decoratedService = Resilience4jProxy.build(context).apply(MyService.class, service); // add conext here
@@ -93,6 +106,17 @@ This is illustrated in the following example:
 
 In this example, whenever a class is defined in an annotation, the framework will use the context to lookup an instance.
 If no instance can be found, then a new instance is created.
+
+
+== Ordering of Decorators
+
+In the case that multiple `Resilience4jProxy` annotations are applied to a service,
+the following execution order is applied.
+
+* First `Retry`
+* then `RateLimiter`
+* then `CircuitBreaker`
+* and when all else fails `Fallback`
 
 
 Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at

@@ -15,14 +15,11 @@
  */
 package io.github.resilience4j.proxy.fallback;
 
-import io.github.resilience4j.core.lang.Nullable;
-import io.github.resilience4j.proxy.Context;
+import io.github.resilience4j.proxy.ProxyContext;
 import io.github.resilience4j.proxy.ProxyDecorator;
 
 import java.lang.reflect.Method;
-import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 
 import static io.github.resilience4j.proxy.util.AnnotationFinder.find;
 import static io.github.resilience4j.proxy.util.Reflect.newInstance;
@@ -33,9 +30,9 @@ import static io.github.resilience4j.proxy.util.Reflect.newInstance;
  */
 public class FallbackProcessor {
 
-    private final Context context;
+    private final ProxyContext context;
 
-    public FallbackProcessor(Context context) {
+    public FallbackProcessor(ProxyContext context) {
        this.context = context;
     }
 
@@ -46,12 +43,12 @@ public class FallbackProcessor {
             return Optional.empty();
         }
 
-        final FallbackHandler fallbackHandler = buildConfig(annotation);
+        final FallbackHandler fallbackHandler = buildFallback(annotation);
         return Optional.of(new FallbackDecorator(fallbackHandler));
     }
 
-    private FallbackHandler buildConfig(Fallback annotation) {
-        final Object fallback = context.lookup(annotation.fallback());
+    private FallbackHandler buildFallback(Fallback annotation) {
+        final Object fallback = context.lookupFallback(annotation.fallback());
 
         if (fallback instanceof FallbackHandler) {
             return (FallbackHandler) fallback;

@@ -16,16 +16,13 @@
 package io.github.resilience4j.proxy.circuitbreaker;
 
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
-import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
-import io.github.resilience4j.proxy.Context;
+import io.github.resilience4j.proxy.ProxyContext;
 import io.github.resilience4j.proxy.ProxyDecorator;
-import io.github.resilience4j.proxy.circuitbreaker.CircuitBreaker.None;
 
 import java.lang.reflect.Method;
 import java.util.Optional;
 
 import static io.github.resilience4j.proxy.util.AnnotationFinder.find;
-import static java.time.Duration.ofMillis;
 
 /**
  * Processes {@link io.github.resilience4j.proxy.circuitbreaker.CircuitBreaker} annotations and returns
@@ -33,9 +30,9 @@ import static java.time.Duration.ofMillis;
  */
 public class CircuitBreakerProcessor {
 
-    private final Context context;
+    private final ProxyContext context;
 
-    public CircuitBreakerProcessor(Context context) {
+    public CircuitBreakerProcessor(ProxyContext context) {
         this.context = context;
     }
 
@@ -47,28 +44,11 @@ public class CircuitBreakerProcessor {
             return Optional.empty();
         }
 
-        final CircuitBreakerConfig config = buildConfig(annotation);
-        final CircuitBreaker circuitBreaker = CircuitBreaker.of(annotation.name(), config);
+        final CircuitBreaker circuitBreaker = buildCircuitBreaker(annotation);
         return Optional.of(new CircuitBreakerDecorator(circuitBreaker));
     }
 
-    private CircuitBreakerConfig buildConfig(io.github.resilience4j.proxy.circuitbreaker.CircuitBreaker annotation) {
-        final CircuitBreakerConfig.Builder config = CircuitBreakerConfig.custom();
-
-        if (annotation.configProvider() != None.class) {
-            return context.lookup(annotation.configProvider()).get();
-        }
-
-        if (annotation.slidingWindowSize() != -1) {
-            config.slidingWindowSize(annotation.slidingWindowSize());
-        }
-        if (annotation.waitDurationInOpenState() != -1) {
-            config.waitDurationInOpenState(ofMillis(annotation.waitDurationInOpenState()));
-        }
-        if (annotation.failureRateThreshold() != -1) {
-            config.failureRateThreshold(annotation.failureRateThreshold());
-        }
-
-        return config.build();
+    private CircuitBreaker buildCircuitBreaker(io.github.resilience4j.proxy.circuitbreaker.CircuitBreaker annotation) {
+        return context.getCircuitBreakerRegistry().circuitBreaker(annotation.name());
     }
 }

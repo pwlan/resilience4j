@@ -15,19 +15,16 @@
  */
 package io.github.resilience4j.proxy.circuitbreaker;
 
+import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.proxy.ProxyDecorator;
-import io.github.resilience4j.ratelimiter.RateLimiter;
 import io.vavr.CheckedFunction1;
 
 import java.lang.reflect.Method;
-import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 
 import static io.github.resilience4j.circuitbreaker.CircuitBreaker.decorateCheckedFunction;
 import static io.github.resilience4j.circuitbreaker.CircuitBreaker.decorateCompletionStage;
 import static io.github.resilience4j.proxy.util.Functions.toSupplier;
 import static io.github.resilience4j.proxy.util.Reflect.isAsync;
-import static io.github.resilience4j.ratelimiter.RateLimiter.decorateCheckedFunction;
-import static io.github.resilience4j.ratelimiter.RateLimiter.decorateCompletionStage;
 
 /**
  * Implementation of {@link ProxyDecorator} that decorates functions with a RateLimiter.

@@ -48,8 +48,8 @@ public class FallbackProxyTest {
     public void testFallbackContext() {
         final FallbackTestServiceImpl fallback = new FallbackTestServiceImpl();
         fallback.result = UUID.randomUUID().toString();
-        final Context context = new Context();
-        context.add(FallbackTestService.class, fallback);
+        final ProxyContext context = new ProxyContext();
+        context.addFallback(FallbackTestService.class, fallback);
 
         decoratedTestService = Resilience4jProxy.build(context).apply(FallbackTestService.class, testService);
         final String result = decoratedTestService.fallbackProvided();

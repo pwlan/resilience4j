@@ -37,31 +37,6 @@ public @interface CircuitBreaker {
     /**
      * @return the name of the circuit breaker.
      */
-    String name() default "CircuitBreaker";
+    String name();
 
-    /**
-     * @return a supplier that provides the entire config. If this is set, then all other config values are ignored.
-     */
-    Class<? extends Supplier<CircuitBreakerConfig>> configProvider() default None.class;
-
-    /**
-     * @return the slidingWindowSize.
-     */
-    int slidingWindowSize() default -1;
-
-    /**
-     * @return the waitDurationInOpenState.
-     */
-    long waitDurationInOpenState() default -1;
-
-    /**
-     * @return the failureRateThreshold.
-     */
-    float failureRateThreshold() default -1;
-
-    /**
-     * Indicates that there is no value specified.
-     */
-    abstract class None implements Supplier<CircuitBreakerConfig> {
-    }
 }

@@ -22,6 +22,7 @@ import io.github.resilience4j.proxy.retry.RetryProcessor;
 import io.vavr.CheckedFunction1;
 
 import java.lang.reflect.Method;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -34,7 +35,7 @@ class AnnotationDecorator implements ProxyDecorator {
     private final RetryProcessor retryProcessor;
     private final CircuitBreakerProcessor circuitBreakerProcessor;
 
-    AnnotationDecorator(Context context) {
+    AnnotationDecorator(ProxyContext context) {
         fallbackProcessor = new FallbackProcessor(context);
         retryProcessor = new RetryProcessor(context);
         rateLimiterProcessor = new RateLimiterProcessor(context);
