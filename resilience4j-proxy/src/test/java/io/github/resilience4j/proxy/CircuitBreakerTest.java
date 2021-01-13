@@ -18,8 +18,6 @@ import java.util.function.Supplier;
 import static io.github.resilience4j.circuitbreaker.CircuitBreakerConfig.custom;
 import static io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry.ofDefaults;
 import static java.util.concurrent.CompletableFuture.completedFuture;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.times;
 import static org.powermock.api.mockito.PowerMockito.*;
@@ -37,11 +35,11 @@ public class CircuitBreakerTest {
 
     @Before
     public void setup() {
-        final ProxyContext context = new ProxyContext();
         final CircuitBreakerRegistry circuitBreakerRegistry = ofDefaults();
         circuitBreakerRegistry.circuitBreaker("slidingWindowSize-23", custom().slidingWindowSize(23).build());
         circuitBreakerRegistry.circuitBreaker("slidingWindowSize-33", custom().slidingWindowSize(33).build());
-        context.setCircuitBreakerRegistry(circuitBreakerRegistry);
+
+        final ProxyContext context = ProxyContext.builder().withCircuitBreakerRegistry(circuitBreakerRegistry).build();
         resilience4jProxy = Resilience4jProxy.build(context);
 
         testService = mock(CircuitBreakerTestService.class);

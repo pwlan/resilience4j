@@ -60,9 +60,7 @@ for the "getGreetingRetry" Retry:
         RetryRegistry retryRegistry = RetryRegistry.ofDefaults();
         retryRegistry.retry("getGreetingRetry", RetryConfig.custom().maxAttempts(4).build());
 
-        ProxyContext context = new ProxyContext();
-        context.setRetryRegistry(retryRegistry);
-
+        ProxyContext context = ProxyContext.builder().withRetryRegistry(retryRegistry).build();
         Resilience4jProxy resilience4jProxy = Resilience4jProxy.build(context);
 ```
 
@@ -96,8 +94,7 @@ This is illustrated in the following example:
         }
 
        FallbackServiceImpl fallback = new FallbackServiceImpl();
-       ProxyContext context = new ProxyContext();
-       context.addFallback(MyService.class, fallback);
+       ProxyContext context = ProxyContext.builder().withFallback(MyService.class, fallback).build();
 
        MyService service = new MyServiceImpl();
        MyService decoratedService = Resilience4jProxy.build(context).apply(MyService.class, service); // add conext here

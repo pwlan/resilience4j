@@ -35,10 +35,10 @@ public class RateLimiterProxyTest {
 
     @Before
     public void setup() {
-        final ProxyContext context = new ProxyContext();
         final RateLimiterRegistry rateLimiterRegistry = ofDefaults();
         rateLimiterRegistry.rateLimiter("configuredRateLimiter", custom().limitForPeriod(23).build());
-        context.setRateLimiterRegistry(rateLimiterRegistry);
+
+        final ProxyContext context = ProxyContext.builder().withRateLimiterRegistry(rateLimiterRegistry).build();
         resilience4jProxy = Resilience4jProxy.build(context);
 
         testService = mock(RateLimiterTestService.class);

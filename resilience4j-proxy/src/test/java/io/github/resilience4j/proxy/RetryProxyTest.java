@@ -36,11 +36,11 @@ public class RetryProxyTest {
 
     @Before
     public void setup() {
-        final ProxyContext context = new ProxyContext();
         final RetryRegistry retryRegistry = RetryRegistry.ofDefaults();
         retryRegistry.retry("retry4Attempts", custom().maxAttempts(4).build());
         retryRegistry.retry("retry5Attempts", custom().maxAttempts(5).build());
-        context.setRetryRegistry(retryRegistry);
+
+        final ProxyContext context = ProxyContext.builder().withRetryRegistry(retryRegistry).build();
         resilience4jProxy = Resilience4jProxy.build(context);
 
         final AtomicInteger counter = new AtomicInteger(0);

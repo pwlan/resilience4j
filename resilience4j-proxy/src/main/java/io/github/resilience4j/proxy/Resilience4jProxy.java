@@ -20,26 +20,6 @@ import static java.lang.reflect.Proxy.newProxyInstance;
 /**
  * Decorates methods of an object with resilience constructs.
  * This is the main entrypoint of the framework.
- *
- * Example Usage:
- * <code>
- *         public interface MyService {
- *
- *             @Retry(name = "getGreeting")
- *             String getGreeting();
- *         }
- *
- *         public interface MyServiceImpl implements MyService {
- *
- *             String getGreeting() {
- *                // Make some call that may fail.
- *             }
- *         }
- *
- *        MyService service = new MyServiceImpl();
- *        MyService decoratedService = Resilience4jProxy.build().apply(MyService.class, service);
- *        decoratedService.getGreeting(); // MyServiceImpl.getGreeting() will be retried if an exception is thrown.
- * </code>
  */
 public final class Resilience4jProxy {
 
@@ -60,7 +40,7 @@ public final class Resilience4jProxy {
     }
 
     public static Resilience4jProxy build() {
-        return build(new AnnotationDecorator(new ProxyContext()));
+        return build(new AnnotationDecorator(ProxyContext.builder().build()));
     }
 
     public static Resilience4jProxy build(ProxyContext context) {
