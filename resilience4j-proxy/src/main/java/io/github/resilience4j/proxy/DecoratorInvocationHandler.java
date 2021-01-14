@@ -21,8 +21,6 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static java.lang.reflect.Proxy.getInvocationHandler;
@@ -34,13 +32,11 @@ import static java.lang.reflect.Proxy.isProxyClass;
  */
 class DecoratorInvocationHandler<T> implements InvocationHandler {
 
-    private final Class<T> type;
     private final T instance;
     private final ProxyDecorator invocationDecorator;
     private final Map<Method, CheckedFunction1<Object[], ?>> decoratedDispatch = new ConcurrentHashMap<>();
 
-    DecoratorInvocationHandler(Class<T> type, T instance, ProxyDecorator invocationDecorator) {
-        this.type = type;
+    DecoratorInvocationHandler(T instance, ProxyDecorator invocationDecorator) {
         this.instance = instance;
         this.invocationDecorator = invocationDecorator;
     }

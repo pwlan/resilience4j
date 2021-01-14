@@ -48,32 +48,23 @@ public class FallbackDecorator implements ProxyDecorator {
         };
     }
 
-    private CompletableFuture<?> handleCompletionStage(CompletionStage<?> resultStage,
+    private CompletableFuture<?> handleCompletionStage(CompletionStage<?> stage,
                                                        CheckedFunction1<Object[], ?> invocationCall,
                                                        Method method,
                                                        Object[] args) {
         final CompletableFuture<Object> futureResult = new CompletableFuture<>();
-        resultStage.whenComplete((result, err) -> {
-            if (err != null) {
-                handleStageException(err, futureResult, invocationCall, method, args);
-            } else {
-                futureResult.complete(result);
-            }
-        });
+        stage.whenComplete((result, err) -> handleComplete(result, err, futureResult, invocationCall, method, args));
         return futureResult;
     }
 
-    private void handleStageException(Throwable err,
-                                      CompletableFuture<Object> futureResult,
-                                      CheckedFunction1<Object[], ?> invocationCall,
-                                      Method method,
-                                      Object[] args) {
-        if (err != null && !(err instanceof Exception)) {
-            futureResult.completeExceptionally(err);
-            return;
-        }
+    private void handleComplete(Object result,
+                                Throwable err,
+                                CompletableFuture<Object> futureResult,
+                                CheckedFunction1<Object[], ?> invocationCall,
+                                Method method,
+                                Object[] args) {
         try {
-            final Object fallbackResult = fallbackHandler.handle(invocationCall, method, args, null, (Exception) err);
+            final Object fallbackResult = fallbackHandler.handle(invocationCall, method, args, result, err);
             if (fallbackResult instanceof CompletionStage) {
                 combine((CompletionStage<?>) fallbackResult, futureResult);
             } else {

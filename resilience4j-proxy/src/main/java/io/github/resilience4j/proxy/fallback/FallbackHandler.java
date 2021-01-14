@@ -41,6 +41,6 @@ interface FallbackHandler {
                   Method method,
                   Object[] args,
                   @Nullable Object result,
-                  @Nullable Exception error) throws Exception;
+                  @Nullable Throwable error) throws Throwable;
 
 }

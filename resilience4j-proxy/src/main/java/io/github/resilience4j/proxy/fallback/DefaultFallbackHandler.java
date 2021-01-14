@@ -42,7 +42,7 @@ class DefaultFallbackHandler implements FallbackHandler {
                          Method method,
                          Object[] args,
                          @Nullable Object result,
-                         @Nullable Exception error) throws Exception {
+                         @Nullable Throwable error) throws Throwable {
         if (error != null) {
             return executeFallback(method, args);
         }

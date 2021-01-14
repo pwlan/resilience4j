@@ -32,7 +32,7 @@ public final class Resilience4jProxy {
     public <T> T apply(Class<T> apiType, T target) {
         return apiType.cast(newProxyInstance(apiType.getClassLoader(),
                                              new Class<?>[]{apiType},
-                                             new DecoratorInvocationHandler<>(apiType, target, decorator)));
+                                             new DecoratorInvocationHandler<>(target, decorator)));
     }
 
     private static Resilience4jProxy build(ProxyDecorator decorator) {
