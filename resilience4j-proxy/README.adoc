@@ -65,45 +65,76 @@ for the "getGreetingRetry" Retry:
 ```
 
 
-== Configuring Fallbacks
+== Defining Fallbacks
 
-Unlike other Resilience4j constructs, configuring fallbacks does not use a registry.
-The default behaviour is to simply instantiate the class defined in the `@Fallback` annotation using a no-arg constructor.
-However, pre-instantiated classes can also be passed to the framework that are then used instead.
-This is illustrated in the following example:
+`@Fallback` annotations can be defined at the interface level and/or on individual methods.
+(`@Fallback` annotations defined on methods overwrite fallbacks defined on the interface level.)
 
 ``` java
         public interface MyService {
 
-            @Fallback(fallback = MyService.class)
+            @Fallback(fallback = FallbackService.class)
             String getGreeting();
         }
 
-        public interface MyServiceImpl implements MyService {
-
-            String getGreeting() {
-               // Make some call that may fail.
-            }
-        }
-
-       public interface FallbackServiceImpl implements MyService {
+       public interface FallbackService {
 
             String getGreeting() {
               return "fallback";
             }
         }
 
-       FallbackServiceImpl fallback = new FallbackServiceImpl();
-       ProxyContext context = ProxyContext.builder().withFallback(MyService.class, fallback).build();
-
-       MyService service = new MyServiceImpl();
-       MyService decoratedService = Resilience4jProxy.build(context).apply(MyService.class, service); // add conext here
-
+       FallbackService fallback = new FallbackService();
+       ProxyContext context = ProxyContext.builder().withFallback(FallbackService.class, fallback).build();
+       Resilience4jProxy resilience4jProxy = Resilience4jProxy.build(context);
 ```
 
-In this example, whenever a class is defined in an annotation, the framework will use the context to lookup an instance.
-If no instance can be found, then a new instance is created.
+Fallbacks are specified with the `ProxyContext#withFallback` method together with a key.
+This key is used to match the provided fallbacks with the corresponding `@Fallback` annotations.
+If a match cannot be found, the framework will try to instantiate the class declared in the `@Fallback`
+annotation directly using a no-arg constructor.
 
+As illustrated in the example, fallbacks are not required to implement
+the interface for which they are providing a fallback (however, this is recommended).
+It is sufficient the fallback provides methods with matching signatures.
+This is mainly useful when fallbacks are only required for a subset of methods.
+
+=== FallbackHandler
+
+The `FallbackHandler` is an interface that fallbacks may implement to obtain more control and flexibility.
+
+``` java
+
+  public interface MyService {
+
+            @Fallback(fallback = FallbackService.class)
+            String getGreeting();
+
+            @Fallback(fallback = FallbackService.class)
+            String anotherGreeting(String parameter);
+  }
+
+   class FallbackService implements FallbackHandler {
+
+      Object handle(CheckedFunction1<Object[], ?> invocationCall,
+                  Method method,
+                  Object[] args,
+                  @Nullable Object result,
+                  @Nullable Exception error) throws Exception {
+        if(error != null) {
+          return "fallback";
+        }
+        return result;
+      }
+}
+```
+
+By implementing the `FallbackHandler`, the `FallbackService` can be used as a fallback for
+multiple methods without having to provide matching method signatures.
+Furthermore, `FallbackService#handle` is called on every invocation of the underlining method whether the method throws
+an exception or not. This enables Fallbacks to be applied based on method results and not just exceptions.
+Finally, another use case for `FallbackHandler` is to retry the failing method. This can be done by simply invoking the
+`invocationCall` function passed to the `FallbackService#handle` method.
 
 == Ordering of Decorators
 
