@@ -20,7 +20,7 @@ import io.vavr.CheckedFunction1;
 import java.lang.reflect.Method;
 
 /**
- * Used to decorate methods with resilience4j constructs. Decorators can be stacked, allowing
+ * Decorates a method. Decorators can be stacked, allowing
  * multiple Decorators to be combined.
  */
 @FunctionalInterface

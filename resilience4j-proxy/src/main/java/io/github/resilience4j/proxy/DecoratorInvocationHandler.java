@@ -27,7 +27,7 @@ import static java.lang.reflect.Proxy.getInvocationHandler;
 import static java.lang.reflect.Proxy.isProxyClass;
 
 /**
- * An instance of {@link InvocationHandler} that uses {@link ProxyDecorator}s to enhance the
+ * An instance of {@link InvocationHandler} that uses a {@link ProxyDecorator} to enhance the
  * invocations of methods.
  */
 class DecoratorInvocationHandler<T> implements InvocationHandler {

@@ -22,7 +22,6 @@ import java.lang.reflect.Method;
 import java.util.Optional;
 
 import static io.github.resilience4j.proxy.util.AnnotationFinder.find;
-import static io.github.resilience4j.proxy.util.Reflect.newInstance;
 
 /**
  * Processes {@link io.github.resilience4j.proxy.fallback.Fallback} annotations and returns

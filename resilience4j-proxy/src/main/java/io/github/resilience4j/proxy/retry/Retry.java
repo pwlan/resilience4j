@@ -15,11 +15,9 @@
  */
 package io.github.resilience4j.proxy.retry;
 
-import io.github.resilience4j.retry.RetryConfig;
-
-import java.lang.annotation.*;
-import java.util.function.Predicate;
-import java.util.function.Supplier;
+import java.lang.annotation.Documented;
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
 
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.ElementType.TYPE;

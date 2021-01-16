@@ -15,10 +15,9 @@
  */
 package io.github.resilience4j.proxy.circuitbreaker;
 
-import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
-
-import java.lang.annotation.*;
-import java.util.function.Supplier;
+import java.lang.annotation.Documented;
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
 
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.ElementType.TYPE;

@@ -7,6 +7,7 @@ Therefore, all Resilience4jProxy annotations can only be declared on interfaces 
 This makes the library especially interesting for other interface-based technologies,
 such as https://github.com/OpenFeign/feign[OpenFeign] and https://square.github.io/retrofit[Retrofit].
 
+
 == Current Features
 * CircuitBreaker
 * Retry
@@ -135,6 +136,47 @@ Furthermore, `FallbackService#handle` is called on every invocation of the under
 an exception or not. This enables Fallbacks to be applied based on method results and not just exceptions.
 Finally, another use case for `FallbackHandler` is to retry the failing method. This can be done by simply invoking the
 `invocationCall` function passed to the `FallbackService#handle` method.
+
+
+== Async Methods
+
+Resilience4jProxy annotations can be applied to methods that are executed asynchronously.
+For the framework to identify such methods, the return type must be an instance
+of or inherit from `CompletionStage`, for example, `CompletableFuture`.
+In this case, the corresponding Resilience4j decorators are used, for example,
+`Retry#decorateCompletionStage()`.
+
+=== Fallback for Async Methods
+
+Fallbacks can also be applied to methods that are executed asynchronously.
+In this case, fallbacks are called after the `CompletionStage` has completed.
+Fallbacks themselves may return a `CompletionStage` or the return value directly. In the later case, the returned value
+is wrapped in a `CompletableFuture`.
+
+``` java
+
+  public interface MyService {
+
+            @Fallback(fallback = FallbackService.class)
+            CompletionStage<String> getGreeting();
+  }
+
+   class FallbackService implements FallbackHandler {
+
+      Object handle(CheckedFunction1<Object[], ?> invocationCall,
+                  Method method,
+                  Object[] args,
+                  @Nullable Object result,
+                  @Nullable Exception error) throws Exception {
+        if(error != null) {
+          return "fallback"; // will be automatically wrapped in a CompletableFuture
+          // return CompletableFuture.complete(result) would also work
+        }
+        return result;
+      }
+}
+```
+
 
 == Ordering of Decorators
 

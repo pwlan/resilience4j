@@ -22,11 +22,15 @@ import io.github.resilience4j.proxy.retry.RetryProcessor;
 import io.vavr.CheckedFunction1;
 
 import java.lang.reflect.Method;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * Processes all Resilience4jProxy annotations and decorates functions accordingly.
+ * Processes Resilience4jProxy annotations and decorates methods with the corresponding decorators.
+ * The following decorators are supported and are applied in the following order: <br>
+ * Retry <br>
+ * RateLimiter<br>
+ * CircuitBreaker<br>
+ * Fallback<br>
  */
 class AnnotationDecorator implements ProxyDecorator {
 

@@ -18,7 +18,7 @@ package io.github.resilience4j.proxy;
 import static java.lang.reflect.Proxy.newProxyInstance;
 
 /**
- * Decorates methods of an object with resilience constructs.
+ * Decorates classes based on their Resilience4jProxy annotations.
  * This is the main entrypoint of the framework.
  */
 public final class Resilience4jProxy {
@@ -29,20 +29,33 @@ public final class Resilience4jProxy {
         this.decorator = decorator;
     }
 
+    /**
+     * Processes Resilience4jProxy annotations declared on an interface and returns a decorated instance.
+     *
+     * @param apiType an interface defining the Resilience4jProxy annotations.
+     * @param target  the implementation of the interface that will be called.
+     * @return the decorated instance of the <code>apiType</code> class.
+     */
     public <T> T apply(Class<T> apiType, T target) {
         return apiType.cast(newProxyInstance(apiType.getClassLoader(),
-                                             new Class<?>[]{apiType},
-                                             new DecoratorInvocationHandler<>(target, decorator)));
+            new Class<?>[]{apiType},
+            new DecoratorInvocationHandler<>(target, decorator)));
     }
 
     private static Resilience4jProxy build(ProxyDecorator decorator) {
         return new Resilience4jProxy(decorator);
     }
 
+    /**
+     * Builds a new instance of Resilience4jProxy with am empty {@link ProxyContext}.
+     */
     public static Resilience4jProxy build() {
         return build(new AnnotationDecorator(ProxyContext.builder().build()));
     }
 
+    /**
+     * Builds a new instance of Resilience4jProxy with a specified {@link ProxyContext}.
+     */
     public static Resilience4jProxy build(ProxyContext context) {
         return build(new AnnotationDecorator(context));
     }
