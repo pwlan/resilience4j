@@ -18,6 +18,8 @@ import java.util.function.Supplier;
 import static io.github.resilience4j.ratelimiter.RateLimiterConfig.custom;
 import static io.github.resilience4j.ratelimiter.RateLimiterRegistry.ofDefaults;
 import static java.util.concurrent.CompletableFuture.completedFuture;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.times;
 import static org.powermock.api.mockito.PowerMockito.*;
@@ -31,12 +33,12 @@ public class RateLimiterProxyTest {
     private RateLimiterTestService decoratedTestService;
 
     @Captor
-    ArgumentCaptor<RateLimiterConfig> configCaptor;
+    ArgumentCaptor<RateLimiter> configCaptor;
 
     @Before
     public void setup() {
         final RateLimiterRegistry rateLimiterRegistry = ofDefaults();
-        rateLimiterRegistry.rateLimiter("configuredRateLimiter", custom().limitForPeriod(23).build());
+        rateLimiterRegistry.rateLimiter("rateLimiter", custom().limitForPeriod(23).build());
 
         final ProxyContext context = ProxyContext.builder().withRateLimiterRegistry(rateLimiterRegistry).build();
         resilience4jProxy = Resilience4jProxy.build(context);
@@ -59,28 +61,23 @@ public class RateLimiterProxyTest {
     }
 
     @Test
-    public void testRateLimited() {
+    public void testRateLimiterDecorate() {
         decoratedTestService.rateLimited();
 
         verifyStatic(RateLimiter.class);
-        RateLimiter.decorateCheckedFunction(isA(RateLimiter.class), isA(CheckedFunction1.class));
+        RateLimiter.decorateCheckedFunction(configCaptor.capture(), any());
+        final RateLimiter rateLimiter = configCaptor.getValue();
+        assertThat(rateLimiter.getRateLimiterConfig().getLimitForPeriod()).isEqualTo(23);
     }
 
     @Test
-    public void testAsyncRateLimited() {
+    public void testAsyncRateLimiterDecorate() {
         decoratedTestService.asyncRateLimited();
 
         verifyStatic(RateLimiter.class);
-        RateLimiter.decorateCompletionStage(isA(RateLimiter.class), isA(Supplier.class));
-    }
-
-    @Test
-    public void testRateLimiterConfig() {
-        decoratedTestService.configuredRateLimiter();
-        // verifyStatic(RateLimiter.class);
-        // RateLimiter.of(eq("configuredRateLimiter"), configCaptor.capture());
-        // final RateLimiterConfig config = configCaptor.getValue();
-        //assertThat(config.getLimitForPeriod()).isEqualTo(23);
+        RateLimiter.decorateCompletionStage(configCaptor.capture(), any());
+        final RateLimiter rateLimiter = configCaptor.getValue();
+        assertThat(rateLimiter.getRateLimiterConfig().getLimitForPeriod()).isEqualTo(23);
     }
 }
 
@@ -92,11 +89,8 @@ interface RateLimiterTestService {
     @io.github.resilience4j.proxy.rateLimiter.RateLimiter(name = "rateLimiter")
     String rateLimited();
 
-    @io.github.resilience4j.proxy.rateLimiter.RateLimiter(name = "asyncRateLimiter")
+    @io.github.resilience4j.proxy.rateLimiter.RateLimiter(name = "rateLimiter")
     CompletableFuture<String> asyncRateLimited();
-
-    @io.github.resilience4j.proxy.rateLimiter.RateLimiter(name = "configuredRateLimiter")
-    String configuredRateLimiter();
 
     String noRateLimit();
 }

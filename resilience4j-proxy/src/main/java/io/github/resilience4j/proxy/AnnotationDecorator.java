@@ -46,6 +46,9 @@ class AnnotationDecorator implements ProxyDecorator {
         circuitBreakerProcessor = new CircuitBreakerProcessor(context);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public CheckedFunction1<Object[], ?> decorate(CheckedFunction1<Object[], ?> invocationCall, Method method) {
         final AtomicReference<CheckedFunction1<Object[], ?>> result = new AtomicReference<>(invocationCall);

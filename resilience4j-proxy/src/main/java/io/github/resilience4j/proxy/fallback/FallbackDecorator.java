@@ -33,6 +33,9 @@ public class FallbackDecorator implements ProxyDecorator {
         this.fallbackHandler = fallbackHandler;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public CheckedFunction1<Object[], ?> decorate(CheckedFunction1<Object[], ?> invocationCall, Method method) {
         return args -> {

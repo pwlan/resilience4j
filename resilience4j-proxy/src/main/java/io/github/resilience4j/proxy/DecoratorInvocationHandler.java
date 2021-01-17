@@ -41,6 +41,9 @@ class DecoratorInvocationHandler<T> implements InvocationHandler {
         this.invocationDecorator = invocationDecorator;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
         return callDecoratedMethod(method, args);

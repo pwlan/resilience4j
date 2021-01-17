@@ -22,6 +22,7 @@ import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 import static org.powermock.api.mockito.PowerMockito.spy;
+import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({io.github.resilience4j.retry.Retry.class})
@@ -32,7 +33,7 @@ public class RetryProxyTest {
     private RetryTestService decoratedTestService;
 
     @Captor
-    ArgumentCaptor<RetryConfig> configCaptor;
+    ArgumentCaptor<io.github.resilience4j.retry.Retry> configCaptor;
 
     @Before
     public void setup() {
@@ -110,12 +111,23 @@ public class RetryProxyTest {
     }
 
     @Test
-    public void testRetryConfig() {
+    public void testRetryDecorate() {
         decoratedTestService.retryRecovery();
-        // verifyStatic(io.github.resilience4j.retry.Retry.class);
-        // io.github.resilience4j.retry.Retry.of(eq("retryRecovery"), configCaptor.capture());
-        // final RetryConfig config = configCaptor.getValue();
-        // assertThat(config.getMaxAttempts()).isEqualTo(5);
+
+        verifyStatic(io.github.resilience4j.retry.Retry.class);
+        io.github.resilience4j.retry.Retry.decorateCheckedFunction(configCaptor.capture(), any());
+        final io.github.resilience4j.retry.Retry retry = configCaptor.getValue();
+        assertThat(retry.getRetryConfig().getMaxAttempts()).isEqualTo(5);
+    }
+
+    @Test
+    public void testAsyncRetryDecorate() {
+        decoratedTestService.asyncRetryRecovery();
+
+        verifyStatic(io.github.resilience4j.retry.Retry.class);
+        io.github.resilience4j.retry.Retry.decorateCompletionStage(configCaptor.capture(), any(), any());
+        final io.github.resilience4j.retry.Retry retry = configCaptor.getValue();
+        assertThat(retry.getRetryConfig().getMaxAttempts()).isEqualTo(5);
     }
 }
 

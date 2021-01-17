@@ -37,6 +37,9 @@ class CircuitBreakerDecorator implements ProxyDecorator {
         this.circuitBreaker = circuitBreaker;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public CheckedFunction1<Object[], ?> decorate(CheckedFunction1<Object[], ?> fn, Method method) {
         if (isAsync(method)) {

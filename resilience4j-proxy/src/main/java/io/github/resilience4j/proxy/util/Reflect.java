@@ -18,7 +18,6 @@ package io.github.resilience4j.proxy.util;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Map;
 import java.util.concurrent.CompletionStage;
 
 public final class Reflect {
@@ -33,21 +32,6 @@ public final class Reflect {
         final Constructor<T> constructor = instanceClass.getDeclaredConstructor();
         constructor.setAccessible(true);
         return constructor.newInstance();
-    }
-
-    public static <T> T newInstance(Class<T> instanceClass, Map<Class<?>, Object> cache) {
-        try {
-            final Object result = cache.computeIfAbsent(instanceClass, key -> {
-                try {
-                    return newInstance(instanceClass);
-                } catch (Exception e) {
-                    throw new IllegalArgumentException(e);
-                }
-            });
-            return (T) result;
-        } catch (ClassCastException e) {
-            throw new IllegalArgumentException(e);
-        }
     }
 
     public static Method findMatchingMethod(Object instance, Method method) {

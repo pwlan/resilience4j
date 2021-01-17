@@ -43,6 +43,9 @@ class RetryDecorator implements ProxyDecorator {
         this.scheduledExecutor = scheduledExecutor;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public CheckedFunction1<Object[], ?> decorate(CheckedFunction1<Object[], ?> fn, Method method) {
         if (isAsync(method)) {
