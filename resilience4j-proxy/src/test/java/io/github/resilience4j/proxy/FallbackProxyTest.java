@@ -15,7 +15,6 @@ import static org.mockito.Mockito.*;
 
 public class FallbackProxyTest {
 
-    final private Resilience4jProxy resilience4jProxy = Resilience4jProxy.build();
     private FallbackTestService testService;
     private FallbackTestService decoratedTestService;
 
@@ -27,7 +26,7 @@ public class FallbackProxyTest {
         when(testService.fallbackProvided()).thenThrow(new RuntimeException("test"));
         when(testService.asyncFallback()).thenReturn(failedFuture());
 
-        decoratedTestService = resilience4jProxy.apply(FallbackTestService.class, testService);
+        decoratedTestService = Resilience4jProxy.build().apply(FallbackTestService.class, testService);
     }
 
     @Test
@@ -66,7 +65,7 @@ public class FallbackProxyTest {
 }
 
 /**
- * Test Service with fallback.
+ * Test Data
  */
 @Fallback(name = "fallbackTestService", fallback = FallbackTestServiceImpl.class)
 interface FallbackTestService {

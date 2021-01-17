@@ -16,6 +16,8 @@
 package io.github.resilience4j.proxy;
 
 import io.github.resilience4j.proxy.circuitbreaker.CircuitBreakerProcessor;
+import io.github.resilience4j.proxy.exception.ExceptionMapper;
+import io.github.resilience4j.proxy.exception.ExceptionsProcessor;
 import io.github.resilience4j.proxy.fallback.FallbackProcessor;
 import io.github.resilience4j.proxy.rateLimiter.RateLimiterProcessor;
 import io.github.resilience4j.proxy.retry.RetryProcessor;
@@ -38,12 +40,14 @@ class AnnotationDecorator implements ProxyDecorator {
     private final FallbackProcessor fallbackProcessor;
     private final RetryProcessor retryProcessor;
     private final CircuitBreakerProcessor circuitBreakerProcessor;
+    private final ExceptionsProcessor exceptionsProcessor;
 
     AnnotationDecorator(ProxyContext context) {
         fallbackProcessor = new FallbackProcessor(context);
         retryProcessor = new RetryProcessor(context);
         rateLimiterProcessor = new RateLimiterProcessor(context);
         circuitBreakerProcessor = new CircuitBreakerProcessor(context);
+        exceptionsProcessor = new ExceptionsProcessor(context);
     }
 
     /**
@@ -53,6 +57,7 @@ class AnnotationDecorator implements ProxyDecorator {
     public CheckedFunction1<Object[], ?> decorate(CheckedFunction1<Object[], ?> invocationCall, Method method) {
         final AtomicReference<CheckedFunction1<Object[], ?>> result = new AtomicReference<>(invocationCall);
 
+        exceptionsProcessor.process(method).ifPresent(d -> result.set(d.decorate(invocationCall, method)));
         retryProcessor.process(method).ifPresent(d -> result.set(d.decorate(invocationCall, method)));
         rateLimiterProcessor.process(method).ifPresent(d -> result.set(d.decorate(invocationCall, method)));
         circuitBreakerProcessor.process(method).ifPresent(d -> result.set(d.decorate(invocationCall, method)));

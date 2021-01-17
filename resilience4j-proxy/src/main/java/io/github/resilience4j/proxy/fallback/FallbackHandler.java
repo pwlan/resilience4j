@@ -25,7 +25,7 @@ import java.lang.reflect.Method;
  * Implementations of this interface are called after every method invocation
  * and decide if a fallback is required or not.
  */
-interface FallbackHandler {
+public interface FallbackHandler {
 
     /**
      * Decides if a fallback is required and if so performs the fallback.

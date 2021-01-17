@@ -1,7 +1,6 @@
 package io.github.resilience4j.proxy;
 
 import io.github.resilience4j.ratelimiter.RateLimiter;
-import io.github.resilience4j.ratelimiter.RateLimiterConfig;
 import io.github.resilience4j.ratelimiter.RateLimiterRegistry;
 import io.vavr.CheckedFunction1;
 import org.junit.Before;
@@ -13,7 +12,6 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Supplier;
 
 import static io.github.resilience4j.ratelimiter.RateLimiterConfig.custom;
 import static io.github.resilience4j.ratelimiter.RateLimiterRegistry.ofDefaults;
@@ -28,8 +26,6 @@ import static org.powermock.api.mockito.PowerMockito.*;
 @PrepareForTest({RateLimiter.class})
 public class RateLimiterProxyTest {
 
-    private Resilience4jProxy resilience4jProxy;
-    private RateLimiterTestService testService;
     private RateLimiterTestService decoratedTestService;
 
     @Captor
@@ -40,16 +36,14 @@ public class RateLimiterProxyTest {
         final RateLimiterRegistry rateLimiterRegistry = ofDefaults();
         rateLimiterRegistry.rateLimiter("rateLimiter", custom().limitForPeriod(23).build());
 
-        final ProxyContext context = ProxyContext.builder().withRateLimiterRegistry(rateLimiterRegistry).build();
-        resilience4jProxy = Resilience4jProxy.build(context);
-
-        testService = mock(RateLimiterTestService.class);
+        final RateLimiterTestService testService = mock(RateLimiterTestService.class);
         when(testService.rateLimited()).thenReturn("success");
         when(testService.asyncRateLimited()).thenReturn(completedFuture("success"));
 
         spy(RateLimiter.class);
 
-        decoratedTestService = resilience4jProxy.apply(RateLimiterTestService.class, testService);
+        final ProxyContext context = ProxyContext.builder().withRateLimiterRegistry(rateLimiterRegistry).build();
+        decoratedTestService = Resilience4jProxy.build(context).apply(RateLimiterTestService.class, testService);
     }
 
     @Test
@@ -82,7 +76,7 @@ public class RateLimiterProxyTest {
 }
 
 /**
- * Test Service with RateLimiter.
+ * Test Data
  */
 interface RateLimiterTestService {
 

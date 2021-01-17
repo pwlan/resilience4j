@@ -1,6 +1,7 @@
 package io.github.resilience4j.proxy;
 
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
+import io.github.resilience4j.proxy.exception.ExceptionMapper;
 import io.github.resilience4j.proxy.util.Reflect;
 import io.github.resilience4j.ratelimiter.RateLimiterRegistry;
 import io.github.resilience4j.retry.RetryRegistry;
@@ -23,7 +24,7 @@ import static java.util.concurrent.Executors.newSingleThreadScheduledExecutor;
  */
 public class ProxyContext {
 
-    private final ConcurrentHashMap<Class<?>, Object> fallbacks = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Class<?>, Object> beans = new ConcurrentHashMap<>();
     private ScheduledExecutorService scheduledExecutor;
     private RetryRegistry retryRegistry;
     private RateLimiterRegistry rateLimiterRegistry;
@@ -59,12 +60,11 @@ public class ProxyContext {
     }
 
     /**
-     * @return the specified fallback or creates a new instance of the class passed as the key parameter.
-     * For this, the class must have a no-arg constructor.
+     * @return the bean stored under the specified key. These can be fallbacks, exception mappers, a.s.o
      */
-    public <T> T lookupFallback(Class<T> key) {
+    public <T> T lookup(Class<T> key) {
         try {
-            final Object result = fallbacks.computeIfAbsent(key, this::newInstance);
+            final Object result = beans.computeIfAbsent(key, this::newInstance);
             return (T) result;
         } catch (ClassCastException e) {
             throw new IllegalArgumentException(e);
@@ -86,8 +86,8 @@ public class ProxyContext {
         return new Builder();
     }
 
-    private <T> void addFallback(Class<T> key, T instance) {
-        fallbacks.put(key, instance);
+    private <T> void addBean(Class<T> key, T instance) {
+        beans.put(key, instance);
     }
 
     private void setRetryRegistry(RetryRegistry retryRegistry) {
@@ -113,21 +113,53 @@ public class ProxyContext {
         private Builder() {
         }
 
+        /**
+         * Adds a Fallback that can be used with {@link io.github.resilience4j.proxy.fallback.Fallback} annotations.
+         * @param key must match the class specified in the {@link io.github.resilience4j.proxy.fallback.Fallback} annotation.
+         * @param instance the Fallback. Can be any class or an instance of {@link io.github.resilience4j.proxy.fallback.FallbackHandler}.
+         * @return the ProxyContext.Builder
+         */
         public <T> Builder withFallback(Class<T> key, T instance) {
-            proxyContext.addFallback(key, instance);
+            proxyContext.addBean(key, instance);
             return this;
         }
 
+        /**
+         * Adds an ExceptionMapper that can be used with {@link io.github.resilience4j.proxy.exception.Exceptions} annotations.
+         * @param key must match the class specified in the {@link io.github.resilience4j.proxy.exception.Exceptions} annotation.
+         * @param instance the ExceptionMapper.
+         * @return the ProxyContext.Builder
+         */
+        public <T extends ExceptionMapper> Builder withExceptionMapper(Class<T> key, T instance) {
+            proxyContext.addBean(key, instance);
+            return this;
+        }
+
+        /**
+         * Adds a RetryRegistry that is used to resolve {@link io.github.resilience4j.retry.Retry}s.
+         * @param registry the registry.
+         * @return the ProxyContext.Builder
+         */
         public Builder withRetryRegistry(RetryRegistry registry) {
             proxyContext.setRetryRegistry(registry);
             return this;
         }
 
+        /**
+         * Adds a CircuitBreakerRegistry that is used to resolve {@link io.github.resilience4j.circuitbreaker.CircuitBreaker}s.
+         * @param registry the registry.
+         * @return the ProxyContext.Builder
+         */
         public Builder withCircuitBreakerRegistry(CircuitBreakerRegistry registry) {
             proxyContext.setCircuitBreakerRegistry(registry);
             return this;
         }
 
+        /**
+         * Adds a RateLimiterRegistry that is used to resolve {@link io.github.resilience4j.ratelimiter.RateLimiter}s.
+         * @param registry the registry.
+         * @return the ProxyContext.Builder
+         */
         public Builder withRateLimiterRegistry(RateLimiterRegistry registry) {
             proxyContext.setRateLimiterRegistry(registry);
             return this;
@@ -142,6 +174,11 @@ public class ProxyContext {
             });
         }
 
+        /**
+         * Builds an instance of ProxyContext.
+         *
+         * @return the ProxyContext
+         */
         public ProxyContext build() {
             if (proxyContext.getScheduledExecutorService() == null) {
                 proxyContext.setScheduledExecutorService(createDefaultScheduledExecutor());

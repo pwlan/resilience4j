@@ -47,7 +47,7 @@ public class FallbackProcessor {
     }
 
     private FallbackHandler buildFallback(Fallback annotation) {
-        final Object fallback = context.lookupFallback(annotation.fallback());
+        final Object fallback = context.lookup(annotation.fallback());
 
         if (fallback instanceof FallbackHandler) {
             return (FallbackHandler) fallback;

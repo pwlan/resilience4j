@@ -1,8 +1,8 @@
 package io.github.resilience4j.proxy.test;
 
-import java.lang.reflect.Method;
+import io.vavr.CheckedFunction0;
+
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 public final class TestHelper {
@@ -13,21 +13,13 @@ public final class TestHelper {
         return result;
     }
 
-    public static void callAsyncWithException(Supplier<CompletableFuture<String>> subject) throws Throwable {
+    public static Throwable callWithException(CheckedFunction0<String> subject) {
         try {
-            subject.get().get(3, TimeUnit.SECONDS);
-            throw new AssertionError("Expected exception to be thrown!");
-        } catch (Exception ex) {
+            subject.apply();
+        } catch (Throwable ex) {
             // expected exception
+            return ex;
         }
-    }
-
-    public static void callWithException(Supplier<String> subject) throws Throwable {
-        try {
-            subject.get();
-            throw new AssertionError("Expected exception to be thrown!");
-        } catch (Exception ex) {
-            // expected exception
-        }
+        throw new AssertionError("Expected exception to be thrown!");
     }
 }

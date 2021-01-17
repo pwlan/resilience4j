@@ -1,7 +1,6 @@
 package io.github.resilience4j.proxy;
 
 import io.github.resilience4j.proxy.retry.Retry;
-import io.github.resilience4j.retry.RetryConfig;
 import io.github.resilience4j.retry.RetryRegistry;
 import org.junit.Before;
 import org.junit.Test;
@@ -28,7 +27,6 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 @PrepareForTest({io.github.resilience4j.retry.Retry.class})
 public class RetryProxyTest {
 
-    private Resilience4jProxy resilience4jProxy;
     private RetryTestService testService;
     private RetryTestService decoratedTestService;
 
@@ -40,9 +38,6 @@ public class RetryProxyTest {
         final RetryRegistry retryRegistry = RetryRegistry.ofDefaults();
         retryRegistry.retry("retry4Attempts", custom().maxAttempts(4).build());
         retryRegistry.retry("retry5Attempts", custom().maxAttempts(5).build());
-
-        final ProxyContext context = ProxyContext.builder().withRetryRegistry(retryRegistry).build();
-        resilience4jProxy = Resilience4jProxy.build(context);
 
         final AtomicInteger counter = new AtomicInteger(0);
         testService = mock(RetryTestService.class);
@@ -67,7 +62,10 @@ public class RetryProxyTest {
 
         spy(io.github.resilience4j.retry.Retry.class);
 
-        decoratedTestService = resilience4jProxy.apply(RetryTestService.class, testService);
+        final ProxyContext context = ProxyContext.builder()
+            .withRetryRegistry(retryRegistry)
+            .build();
+        decoratedTestService = Resilience4jProxy.build(context).apply(RetryTestService.class, testService);
     }
 
     @Test
@@ -121,8 +119,8 @@ public class RetryProxyTest {
     }
 
     @Test
-    public void testAsyncRetryDecorate() {
-        decoratedTestService.asyncRetryRecovery();
+    public void testAsyncRetryDecorate() throws Exception {
+        decoratedTestService.asyncRetryRecovery().get(3, TimeUnit.SECONDS);
 
         verifyStatic(io.github.resilience4j.retry.Retry.class);
         io.github.resilience4j.retry.Retry.decorateCompletionStage(configCaptor.capture(), any(), any());
@@ -132,7 +130,7 @@ public class RetryProxyTest {
 }
 
 /**
- * Test Service with Retry.
+ * Test Data
  */
 @Retry(name = "retryTestService")
 interface RetryTestService {

@@ -13,7 +13,20 @@ such as https://github.com/OpenFeign/feign[OpenFeign] and https://square.github.
 * Retry
 * RateLimiter
 * Fallback
- 
+* ExceptionMapper
+
+
+== Ordering of Decorators
+
+In the case that multiple `Resilience4jProxy` annotations are applied to a service,
+the following execution order is applied.
+
+* First `ExceptionMapper`
+* then `Retry`
+* then `RateLimiter`
+* then `CircuitBreaker`
+* and when all else fails `Fallback`
+
  
 == Basic Usage
 
@@ -138,6 +151,39 @@ Finally, another use case for `FallbackHandler` is to retry the failing method. 
 `invocationCall` function passed to the `FallbackService#handle` method.
 
 
+== Exception Mappers
+
+Exception Mappers can be used to map exceptions from one type to another.
+This is mainly interesting when using frameworks such as Retrofit or Openfeign as it enables us to translate the more
+technical exceptions, such as `HttpException`, to more business orientated ones.
+
+For example:
+
+``` java
+interface MyService {
+
+    @Exceptions(mappers = NoGreetingException.class)
+    String getGreeting();
+}
+
+class NoGreetingException extends RuntimeException implements ExceptionMapper {
+
+    @Override
+    public Optional<NoGreetingException> map(Throwable exception) {
+        if(exception instanceof Exception){
+            return this;
+        }
+        return Optional.empty();
+    }
+}
+
+ ProxyContext context = ProxyContext.builder()
+                                    .withExceptionMapper(NoGreetingException.class, new NoGreetingException())
+                                    .build();
+ Resilience4jProxy resilience4jProxy = Resilience4jProxy.build(context);
+```
+
+
 == Async Methods
 
 Resilience4jProxy annotations can be applied to methods that are executed asynchronously.
@@ -176,17 +222,6 @@ is wrapped in a `CompletableFuture`.
       }
 }
 ```
-
-
-== Ordering of Decorators
-
-In the case that multiple `Resilience4jProxy` annotations are applied to a service,
-the following execution order is applied.
-
-* First `Retry`
-* then `RateLimiter`
-* then `CircuitBreaker`
-* and when all else fails `Fallback`
 
 
 Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at
